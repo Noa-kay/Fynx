@@ -1,0 +1,442 @@
+/* --- 0. Custom Variables and Root Settings --- */
+:root {
+  --fynx-orange: #ff9933;
+  --fynx-pink: #ff4d94;
+  --fynx-purple: #8e44ad;
+  --fynx-blue: #00bcd4;
+  --fynx-white: #ffffff;
+  --soft-shadow: 0 15px 50px rgba(0,0,0,0.3);
+  --rgb-white: 255, 255, 255;
+  --text-color: #333;
+  --subtle-text: #666;
+}
+
+/* Base style, setting direction to LTR for standard English UI flow */
+:host {
+    font-family: 'Arial', sans-serif; 
+    direction: ltr; /* English text flow */
+    display: block;
+    height: 100%;
+}
+
+/* --- 1. Background and Layout --- */
+
+.app-screen-wrapper {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+  /* Gradient: blue, purple, orange, pink */
+  background: linear-gradient(135deg, var(--fynx-blue), var(--fynx-purple), var(--fynx-orange), var(--fynx-pink));
+}
+
+.bubble-background, .bubble {
+    pointer-events: none;
+}
+
+.bubble-background {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.bubble {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(var(--rgb-white), 0.15);
+    box-shadow: inset 0 0 15px rgba(var(--rgb-white), 0.7);
+    animation: float var(--duration) linear var(--delay) infinite;
+    z-index: 2;
+}
+
+.bubble:nth-child(1) { --size: 80px; width: var(--size); height: var(--size); left: 10%; bottom: -100px; --duration: 15s; --delay: 0s; }
+.bubble:nth-child(2) { --size: 40px; width: var(--size); height: var(--size); left: 70%; bottom: -50px; --duration: 20s; --delay: 5s; }
+.bubble:nth-child(3) { --size: 150px; width: var(--size); height: var(--size); left: 35%; bottom: -150px; --duration: 10s; --delay: 8s; }
+.bubble:nth-child(4) { --size: 25px; width: var(--size); height: var(--size); left: 90%; bottom: -30px; --duration: 25s; --delay: 3s; }
+.bubble:nth-child(5) { --size: 100px; width: var(--size); height: var(--size); left: 5%; bottom: -120px; --duration: 18s; --delay: 12s; }
+.bubble:nth-child(6) { --size: 70px; width: var(--size); height: var(--size); left: 55%; bottom: -90px; --duration: 14s; --delay: 6s; }
+.bubble:nth-child(7) { --size: 30px; width: var(--size); height: var(--size); left: 20%; bottom: -40px; --duration: 22s; --delay: 10s; }
+
+@keyframes float {
+    0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 1; }
+    50% { transform: translateY(-50vh) translateX(20px) rotate(180deg); opacity: 0.8; }
+    100% { transform: translateY(-100vh) translateX(-20px) rotate(360deg); opacity: 0; }
+}
+
+.profile-layout-container {
+    max-width: 800px; /* Reduced max width for tighter focus on the profile card */
+    margin: 0 auto;
+    padding: 20px 15px 50px; 
+    position: relative;
+    z-index: 10;
+}
+
+/* --- 2. Header (Navigation Bar) --- */
+.app-header {
+    position: sticky;
+    top: 0;
+    left: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 40px; /* Increased right padding for small avatar safety */
+    background: rgba(255, 255, 255, 0.1); 
+    backdrop-filter: blur(5px);
+    z-index: 100;
+    color: var(--fynx-white);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+.logo {
+  display: flex;
+  align-items: center;
+}
+
+.logo img {
+  height: 65px;
+  width: auto;
+}
+.app-header nav {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+.app-header nav a {
+    color: var(--fynx-white);
+    text-decoration: none;
+    margin-left: 20px;
+    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    transition: opacity 0.2s, color 0.2s;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 6px;
+}
+.app-header nav a svg {
+    margin-right: 5px;
+    width: 18px;
+    height: 18px;
+}
+.app-header nav a:hover { 
+    opacity: 0.9;
+    background-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+.app-header nav a.active {
+    background-color: rgba(255, 255, 255, 0.2);
+    font-weight: 600;
+}
+.user-avatar-small-container {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid var(--fynx-white);
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.user-avatar-small-container:hover {
+    transform: scale(1.1);
+}
+.user-avatar-small {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.avatar-dropdown-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+/* --- 3. Card Base Styling --- */
+.card {
+    background: rgba(255, 255, 255, 0.95); 
+    border-radius: 20px; 
+    padding: 30px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    border: none;
+    color: var(--text-color);
+}
+
+.profile-card-main {
+    background: linear-gradient(135deg, var(--fynx-purple) 0%, var(--fynx-pink) 100%);
+    color: var(--fynx-white);
+    box-shadow: 0 15px 30px rgba(142, 68, 173, 0.3); 
+    padding: 30px 40px;
+    margin-top: 30px; 
+    margin-bottom: 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.profile-info-group {
+    display: flex;
+    align-items: flex-start;
+    gap: 30px;
+    flex-grow: 1;
+}
+
+.profile-details {
+    padding-top: 5px;
+    text-align: left; 
+}
+
+/* --- 4. Avatar and Info --- */
+.avatar-container {
+    position: relative;
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    border: 5px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    flex-shrink: 0;
+}
+.profile-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.avatar-edit-btn {
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    background-color: var(--fynx-orange);
+    border: 3px solid var(--fynx-white);
+    color: var(--fynx-white);
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: background 0.2s;
+}
+.avatar-edit-btn:hover {
+    background-color: #e68a2e; /* slightly darker orange */
+}
+.avatar-dropdown-menu {
+    position: absolute;
+    top: 100%; /* Below the avatar */
+    right: 0; /* Align to the right for proper dropdown */
+    margin-top: 0.5rem;
+    width: 200px;
+    background: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    padding: 0.5rem;
+    z-index: 150;
+}
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    text-align: left; /* Left align text in menu */
+    font-size: 0.95rem;
+    color: #374151;
+    background: none;
+    border: none;
+    cursor: pointer;
+    border-radius: 0.5rem;
+    transition: background-color 0.15s, color 0.15s;
+    text-decoration: none;
+}
+.menu-item:hover {
+    background-color: #f3f4f6; /* gray-100 */
+    color: #4f46e5;
+}
+.menu-item:active {
+    transform: scale(0.98);
+}
+.menu-divider {
+    height: 1px;
+    background-color: #e5e7eb; /* gray-200 */
+    margin: 0.5rem 0;
+}
+
+.menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 100;
+}
+
+.user-name {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+}
+.user-title {
+    font-size: 1.2rem;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0 0 10px 0;
+}
+.user-location-text {
+    /* Location is optional and hidden if empty */
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+.user-location-text svg {
+    margin-right: 5px;
+    width: 16px;
+    height: 16px;
+}
+.user-bio-text {
+    line-height: 1.5;
+    font-size: 1rem;
+    color: var(--fynx-white);
+    margin-bottom: 20px;
+    display: flex; /* Allow edit button inline */
+    align-items: flex-start;
+    gap: 10px;
+}
+.user-bio-text .empty-text {
+    font-style: italic;
+    opacity: 0.7;
+}
+
+/* --- 5. Skill Tags & Actions --- */
+.skill-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 15px;
+}
+.skill-tag {
+    background-color: rgba(255, 255, 255, 0.3); 
+    color: var(--fynx-white);
+    padding: 6px 15px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.action-btn {
+    border: none;
+    padding: 10px 20px;
+    border-radius: 50px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.edit-profile-lg-btn {
+    background: rgba(255, 255, 255, 0.3);
+    color: var(--fynx-white);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    padding: 12px;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.edit-profile-lg-btn:hover {
+    background: rgba(255, 255, 255, 0.4);
+    transform: scale(1.05);
+}
+.edit-profile-lg-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* --- 6. Modal for Bio Editing --- */
+.edit-bio-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 200;
+}
+.edit-bio-modal {
+    width: 90%;
+    max-width: 500px;
+    padding: 30px;
+    background: var(--fynx-white);
+    border-radius: 15px;
+    box-shadow: var(--soft-shadow);
+    color: var(--text-color);
+    border: none;
+}
+.bio-edit-textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    resize: vertical;
+    font-size: 1rem;
+}
+.modal-actions-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+.modal-actions-footer .action-btn {
+    border-radius: 10px;
+}
+.message-btn { /* Cancel */
+    background-color: #f0f0f0;
+    color: var(--text-color);
+}
+.connect-btn { /* Save */
+    background: linear-gradient(90deg, var(--fynx-orange), var(--fynx-pink));
+    color: var(--fynx-white);
+}
+
+/* --- 7. Responsive Design --- */
+@media (max-width: 768px) {
+    .app-header {
+        padding: 10px 20px; /* Increased right padding for mobile from 15px to 20px */
+    }
+    .app-header nav {
+        display: none; 
+    }
+    .profile-card-main {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 20px;
+    }
+    .profile-info-group {
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+    }
+    .profile-details {
+        text-align: center;
+    }
+    .edit-profile-lg-btn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+    }
+    .user-name {
+        font-size: 2rem;
+    }
+    .user-bio-text {
+        justify-content: center;
+    }
+}

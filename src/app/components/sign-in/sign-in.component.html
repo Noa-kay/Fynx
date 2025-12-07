@@ -1,0 +1,50 @@
+<div class="app-screen-wrapper">
+  <div class="bubble-background">
+    <div class="bubble" style="--size: 80px; left: 10%; bottom: -100px; --duration: 15s; --delay: 0s;"></div>
+    <div class="bubble" style="--size: 40px; left: 70%; bottom: -50px; --duration: 20s; --delay: 5s;"></div>
+    <div class="bubble" style="--size: 150px; left: 35%; bottom: -150px; --duration: 10s; --delay: 8s;"></div>
+    <div class="bubble" style="--size: 25px; left: 90%; bottom: -30px; --duration: 25s; --delay: 3s;"></div>
+    <div class="bubble" style="--size: 100px; left: 5%; bottom: -120px; --duration: 18s; --delay: 12s;"></div>
+    <div class="bubble" style="--size: 70px; left: 55%; bottom: -90px; --duration: 14s; --delay: 6s;"></div>
+    <div class="bubble" style="--size: 30px; left: 20%; bottom: -40px; --duration: 22s; --delay: 10s;"></div>
+  </div>
+
+  <div class="app-screen">
+    <div class="form-card">
+      <div class="logo-container">
+        <img src="assets/images/Logo.png" alt="Fynx Logo" class="app-logo">
+      </div>
+      <h1 class="app-title">Sign In</h1>
+      
+      <div *ngIf="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
+
+      <form #signInForm="ngForm" (ngSubmit)="onSignInSubmit(signInForm)" class="form-content">
+        <input type="text" [(ngModel)]="signInData.username" name="username" placeholder="Username" class="form-input" required>
+        
+        <div class="password-input-wrapper">
+          <input [type]="showPassword ? 'text' : 'password'" [(ngModel)]="signInData.password" name="password" placeholder="Password" class="form-input" required>
+          <button type="button" class="toggle-password-btn" (click)="togglePasswordVisibility()">
+            <svg *ngIf="!showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="eye-icon">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
+            <svg *ngIf="showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="eye-icon">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+            </svg>
+          </button>
+        </div>
+        
+        <button type="submit" [disabled]="!signInForm.valid || loading" class="btn btn-primary">
+          <svg *ngIf="!loading" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 1.2em; height: 1.2em;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+          {{ loading ? 'Signing In...' : 'Sign In' }}
+        </button>
+      </form>
+      
+      <p class="account-link">New here? 
+        <a [routerLink]="['/sign-up']" class="link-text">Create an account</a>
+      </p>
+    </div>
+  </div>
+</div>
