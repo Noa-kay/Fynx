@@ -40,12 +40,12 @@ interface Message {
 })
 export class ChatBotComponent implements OnInit {
 
-  readonly API_KEY = "AIzaSyDKGgmx5uyoqzk1Ru6vFzhugZuTaA3lpkk";
+  readonly API_KEY = "AIzaSyCi3BDcnepy8sBdOBZI_o57uu3n8XbhDs8";
   readonly API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent';
 
   private mockUser: User = {
     id: 'user-123',
-    name: 'you', // 👈 שם המשתמש שונה ל-"you"
+    name: 'you',
     title: 'Senior Developer',
     location: 'San Francisco, USA',
     bio: 'Passionate about clean code, UX design, and Angular signals.',

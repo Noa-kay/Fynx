@@ -25,8 +25,6 @@ export class AuthService {
   }
 
 
-// בתוך auth.service.ts
-
 private loadUserFromStorage() {
     try {
         const userData = localStorage.getItem('fynx_user');
@@ -162,8 +160,6 @@ private setAndSaveUser(response: UserDTO): void {
   }
 
 currentUser(): UserDTO | null { 
-    // 🚨 שים לב: הסרנו את הקריאה ל-getToken() ואת בדיקת ה-'if(!t)'
-    
     if (!this.currentUserData) {
         // אם אין נתונים בזיכרון, טען אותם מה-localStorage.
         // זה יחזיר את נתוני המשתמש המלאים (כולל התמונה).

@@ -1,4 +1,4 @@
-// קובץ: user.service.ts
+
 
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
@@ -27,9 +27,6 @@ export class UserService {
   }
 
 
-// UserService.ts
-
-// UserService.ts
 
 getCurrentUserProfile(userId: number) {
     return this.http.get<UserDTO>(

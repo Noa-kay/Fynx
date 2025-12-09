@@ -17,21 +17,22 @@ export class CategoryPostsComponent implements OnInit {
   categoryId: string | null = null;
   categoryName: string = '';
   posts: any[] = [];
+  private allCategories: any[] = [];
   
   userAvatar: string = '';
   isAvatarMenuOpen = false;
 
   postTitle = '';
-  postBody = ''; // משמש עבור skillDTO.description
+  postBody = ''; 
   selectedFile: File | null = null;
   previewUrl: string | null = null;
   previewType: string | null = null;
 
   isEditMode = false;
-  editingPostId: number | null = null; // מזהה מסוג number (תואם Long ב-Java)
+  editingPostId: number | null = null; 
 
   showCommentsForPost: number | null = null;
-  newComment: string = '';
+  newCommentsInput: { [postId: number]: string } = {};
   
   showDeletePostModal = false;
   pendingDeletePostId: number | null = null;
@@ -48,7 +49,7 @@ export class CategoryPostsComponent implements OnInit {
     this.categoryId = this.route.snapshot.paramMap.get('id');
     this.loadUserAvatar();
     this.loadPosts();
-    this.setCategoryName();
+    this.loadAllCategories();
   }
 
   togglePortrait() {
@@ -84,15 +85,41 @@ loadUserAvatar() {
     }
 }
 
-  setCategoryName() {
-    const categories: { [key: string]: string } = {
-      '1': 'Programming',
-      '2': 'Music',
-      '3': 'Design',
-      '4': 'Life'
-    };
-    this.categoryName = categories[this.categoryId || ''] || 'Category';
+
+loadAllCategories() {
+    this.api.getCategories().subscribe({ // נניח ש-api.getCategories קיימת
+      next: (cats: any[]) => {
+        this.allCategories = cats || [];
+        console.log('All Categories loaded for lookup:', this.allCategories);
+        
+        // 🎯 3. מצא את שם הקטגוריה רק לאחר שהנתונים נטענו
+        this.setCategoryNameFromApi(); 
+      },
+      error: (err) => console.error('Error loading categories:', err)
+    });
   }
+
+
+
+  setCategoryNameFromApi() {
+    if (!this.categoryId) {
+      this.categoryName = 'All Posts';
+      return;
+    }
+    
+    const catIdNumber = Number(this.categoryId);
+    
+    const foundCategory = this.allCategories.find(c => c.categoryId === catIdNumber);
+    
+    if (foundCategory) {
+      this.categoryName = foundCategory.categoryName;
+    } else {
+      this.categoryName = `Category #${this.categoryId}`; // Fallback
+    }
+    
+    console.log(`Category Name set dynamically to: ${this.categoryName}`);
+  }
+
 
   loadPosts() {
     if (this.categoryId) {
@@ -203,7 +230,6 @@ loadUserAvatar() {
 
   editPost(post: any) {
     this.isEditMode = true;
-    // 🚨 תיקון: שימוש ב-skillId
     this.editingPostId = post.skillId; 
     this.postTitle = post.title;
     this.postBody = post.description; 
@@ -228,7 +254,6 @@ loadUserAvatar() {
   deletePost(postId: number) {
     this.api.deletePost(postId).subscribe({
       next: () => {
-        // 🚨 תיקון: שימוש ב-skillId
         const index = this.posts.findIndex(p => p.skillId === postId); 
         if (index > -1) {
           this.posts.splice(index, 1);
@@ -272,10 +297,9 @@ loadUserAvatar() {
       likedBy: updatedLikedBy
     };
     
-    // 🚨 תיקון: שימוש ב-skillId
+ 
     this.api.updatePost(post.skillId, updatedPost).subscribe({
       next: (updated: any) => {
-        // 🚨 תיקון: שימוש ב-skillId
         const index = this.posts.findIndex(p => p.skillId === post.skillId); 
         if (index > -1) {
           this.posts[index] = updated;
@@ -287,41 +311,77 @@ loadUserAvatar() {
     });
   }
 
-  toggleComments(postId: number) {
-    this.showCommentsForPost = this.showCommentsForPost === postId ? null : postId;
-    this.newComment = '';
-  }
+  // בתוך CategoryPostsComponent
+toggleComments(postId: number) {
+    this.showCommentsForPost = this.showCommentsForPost === postId ? null : postId;
+    
+    // 💡 תיקון: אם פותחים את התיבה, ודא שהקלט עבור הפוסט הזה מאופס.
+    if (this.showCommentsForPost === postId) {
+        this.newCommentsInput[postId] = ''; 
+    }
+}
 
-  addComment(post: any) {
-    if (!this.newComment.trim()) return;
+  // בתוך CategoryPostsComponent
+// בתוך CategoryPostsComponent.ts
 
-    const currentUser = this.authService.getCurrentUserData();
-    const comment = {
-      user: currentUser?.username || 'Anonymous',
-      text: this.newComment.trim(),
-      date: new Date().toISOString()
-    };
+addComment(post: any) {
+    // 1. קריאת טקסט התגובה
+    const commentText = this.newCommentsInput[post.skillId];
+    if (!commentText || !commentText.trim()) return;
 
-    const comments = post.comments || [];
-    comments.push(comment);
+    const currentUser = this.authService.getCurrentUserData();
+    const comment = {
+        // ודא שאתה משתמש ב-'username' אם ה-Backend דורש זאת, או 'user' כפי שהיה קודם
+        user: currentUser?.username || 'Anonymous', 
+        text: commentText.trim(),
+        date: new Date().toISOString()
+    };
 
-    const updatedPost = { ...post, comments };
-    // 🚨 תיקון: שימוש ב-skillId
-    this.api.updatePost(post.skillId, updatedPost).subscribe({
-      next: (updated: any) => {
-        // 🚨 תיקון: שימוש ב-skillId
-        const index = this.posts.findIndex(p => p.skillId === post.skillId); 
-        if (index > -1) {
-          this.posts[index] = updated;
-        }
-        this.newComment = '';
-      },
-      error: (err) => {
-        console.error('Error adding comment:', err);
-        console.error('Failed to add comment.');
-      }
-    });
-  }
+    const comments = post.comments || [];
+    comments.push(comment);
+
+    // 2. יצירת אובייקט העדכון
+    const updatedPostDTO = { 
+        ...post, 
+        comments,
+        // ודא שאתה שולח רק שדות שהשרת באמת צריך לעדכן
+        title: post.title,
+        description: post.description,
+        categoryId: post.categoryId,
+        userId: post.userId,
+        mediaUrl: post.mediaUrl || '',
+        // ייתכן שתצטרך לשלוח את כל השדות החשובים של הפוסט
+    };
+
+    // 3. 🛑 יצירת FormData (התיקון לשגיאת 415)
+    const formData = new FormData();
+
+    const skillBlob = new Blob([JSON.stringify(updatedPostDTO)], {
+        type: 'application/json'
+    });
+    
+    // הוספת ה-JSON כחלק מ-FormData
+    formData.append('skill', skillBlob, 'skill.json'); 
+    // אין צורך לצרף קובץ כי אנחנו רק מוסיפים תגובה
+
+    // 4. שליחה לשרת
+    // הערה: יש לוודא ש-this.api.updatePost() מקבלת גם FormData
+    this.api.updatePost(post.skillId, formData).subscribe({
+        next: (updated: any) => {
+            const index = this.posts.findIndex(p => p.skillId === post.skillId); 
+            if (index > -1) {
+                // עדכון הפוסט עם הנתונים שחזרו מהשרת
+                this.posts[index] = updated; 
+            }
+            this.newCommentsInput[post.skillId] = ''; 
+        },
+        error: (err) => {
+            console.error('Error adding comment:', err);
+            // הצגת הודעת שגיאה למשתמש
+            console.error('Failed to add comment.'); 
+        }
+    });
+}
 
   cancelEdit() {
     this.isEditMode = false;
@@ -330,20 +390,18 @@ loadUserAvatar() {
   }
 
 
-// הוסף מתודה זו כדי לבדוק אם הנתיב הוא וידאו
+
 isMediaVideo(mediaPath: string): boolean {
     if (!mediaPath) return false;
-    // בדיקה לפי סיומת הקובץ (mp4, mov, webm וכו')
     const lowerCasePath = mediaPath.toLowerCase();
     return lowerCasePath.endsWith('.mp4') || 
            lowerCasePath.endsWith('.mov') || 
            lowerCasePath.endsWith('.webm');
 }
 
-// הוסף מתודה זו כדי לבדוק אם הנתיב הוא תמונה
+
 isMediaImage(mediaPath: string): boolean {
     if (!mediaPath) return false;
-    // בדיקה לפי סיומת הקובץ (jpg, png, webp וכו')
     const lowerCasePath = mediaPath.toLowerCase();
     return lowerCasePath.endsWith('.jpg') || 
            lowerCasePath.endsWith('.jpeg') || 
@@ -351,29 +409,13 @@ isMediaImage(mediaPath: string): boolean {
            lowerCasePath.endsWith('.webp');
 }
 
-// 🛑 הוסף מתודה זו כדי לבדוק אם הנתיב הוא אודיו
 isMediaAudio(mediaPath: string): boolean {
     if (!mediaPath) return false;
     const lowerCasePath = mediaPath.toLowerCase();
-    // ניתן להוסיף סיומות נוספות כמו .wav, .ogg
     return lowerCasePath.endsWith('.mp3') || 
            lowerCasePath.endsWith('.wav') || 
            lowerCasePath.endsWith('.ogg');
 }
-
-/*
-// כדי לבנות את ה-URL המלא של התמונה מהשרת
-getMediaFullUrl(mediaPath: string): string {
-    // אם אין נתיב, החזר ריק (או נתיב לתמונת ברירת מחדל)
-    if (!mediaPath) {
-      return ''; 
-   }
-    
-    // 🛑 שימוש ב-ApiService לבניית הנתיב המלא: 
-    // [environment.apiUrl]/skills/files/{mediaPath}
-   return this.api.getImageUrl(mediaPath); 
-  }
-*/
 
 
 }

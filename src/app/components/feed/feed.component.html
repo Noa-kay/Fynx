@@ -30,7 +30,7 @@
         
         <div class="avatar-dropdown-wrapper">
             <div class="user-avatar-small-container sweezy-custom-cursor-hover" (click)="toggleAvatarMenu()">
-                <img alt="User" class="user-avatar-small" src="https://placehold.co/50x50/ff9933/ffffff?text=U">
+                <img alt="User" class="user-avatar-small" [src]="userHeaderAvatarUrl()">
             </div>
             <div class="avatar-dropdown-menu" *ngIf="isAvatarMenuOpen()">
                 <a class="menu-item profile-link-btn" routerLink="/profile" (click)="isAvatarMenuOpen.set(false)">
@@ -58,9 +58,9 @@
                 </div>
                 <div class="filter-row">
                     <select [ngModel]="selectedCategoryId()" (ngModelChange)="selectedCategoryId.set($event === 'all' ? 'all' : +$event)">
-                        <option value="all">All categories</option>
-                        <option *ngFor="let c of categories()" [value]="c.id">{{ c.name }}</option>
-                    </select>
+                       <option value="all">All categories</option>
+                       <option *ngFor="let c of categories()" [value]="c.categoryId">{{ c.categoryName }}</option>
+                       </select>
                     <select [ngModel]="sortMode()" (ngModelChange)="sortMode.set($event)">
                         <option value="top">Top (likes + comments)</option>
                         <option value="likes">Most liked</option>
@@ -77,10 +77,10 @@
                 <div class="post-card" *ngFor="let post of filteredPosts()">
                     <!-- Author Row -->
                     <div class="post-author-row">
-                        <img [src]="post.authorAvatar || 'https://placehold.co/40x40/8e44ad/ffffff?text=' + ((post.author && post.author.charAt(0)) || 'U')" 
-                             [alt]="post.author" 
+                        <img [src]="getSafeMediaUrl(post.userAvatarUrl) || 'https://placehold.co/40x40/8e44ad/ffffff?text=' + ((post.username && post.username.charAt(0)) || 'U')" 
+                             [alt]="post.username" 
                              class="post-author-avatar">
-                        <span class="post-author-name">{{ post.author || 'Unknown' }}</span>
+                        <span class="post-author-name">{{ post.username || 'Unknown' }}</span>
                     </div>
 
                     <!-- Post Header with Title -->
@@ -90,15 +90,29 @@
 
                     <!-- Post Body -->
                     <div class="post-body">
-                        <p>{{ post.body }}</p>
+                        <p>{{ post.description }}</p> 
                     </div>
 
                     <!-- Post Media -->
-                    <div class="post-media" *ngIf="post.media">
-                        <img *ngIf="post.mediaType?.startsWith('image')" [src]="post.media" alt="Post image" />
-                        <video *ngIf="post.mediaType?.startsWith('video')" [src]="post.media" controls playsinline></video>
-                        <audio *ngIf="post.mediaType?.startsWith('audio')" [src]="post.media" controls></audio>
+                    <div class="post-media" *ngIf="post.imagePath">
+    
+                        <video 
+                        *ngIf="isPostVideo(post)" 
+                        [src]="getSafeMediaUrl(post.imagePath)"  controls playsinline
+                        ></video>
+                        
+                        <audio 
+                        *ngIf="isPostAudio(post)" 
+                        [src]="getSafeMediaUrl(post.imagePath)"  controls
+                        ></audio>
+                        
+                        <img 
+                        *ngIf="!isPostVideo(post) && !isPostAudio(post)" 
+                        [src]="getSafeMediaUrl(post.imagePath)"  alt="Post media" 
+                        />
+                        
                     </div>
+
 
                     <!-- Post Footer - Likes & Comments -->
                     <div class="post-footer">
