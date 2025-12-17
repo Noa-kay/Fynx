@@ -29,7 +29,7 @@
     
     <div class="avatar-dropdown-wrapper">
       <div class="user-avatar-small-container sweezy-custom-cursor-hover" (click)="toggleAvatarMenu()">
-        <img alt="User" class="user-avatar-small" src="https://placehold.co/50x50/ff9933/ffffff?text=U">
+       <img alt="User" class="user-avatar-small" [src]="getUserAvatar()" >
       </div>
       <div class="avatar-dropdown-menu" *ngIf="isAvatarMenuOpen()">
         <a class="menu-item profile-link-btn" routerLink="/profile" (click)="isAvatarMenuOpen.set(false)">
@@ -58,12 +58,6 @@
             <strong *ngIf="m.role === 'ai'">AI:</strong>
             <span>{{ m.text }}</span>
             <button *ngIf="m.role === 'ai'" class="tts-btn" type="button" (click)="speak(m.text)" title="Read aloud">🔊</button>
-            <div *ngIf="m.sources && m.sources.length" class="text-xs mt-2 opacity-75">
-              <strong class="text-white opacity-90 block mb-1">Sources:</strong>
-              <a *ngFor="let src of m.sources; trackBy: trackByFn" [href]="src.uri" target="_blank" class="block underline hover:opacity-100 truncate w-full text-sm" [title]="src.title">
-                {{ src.title }}
-              </a>
-            </div>
           </div>
         </div>
         <div *ngIf="isLoading()" class="ai thinking">

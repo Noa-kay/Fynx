@@ -69,7 +69,7 @@ export class SignInComponent implements OnInit {
       },
       error: (err) => {
         this.loading = false;
-        this.errorMessage = err.error?.message || 'Server error. Please try again.';
+        this.errorMessage = err.error?.message || 'Incorrect username or password';
       }
     });
   }

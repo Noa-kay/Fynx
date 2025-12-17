@@ -62,7 +62,6 @@ export class SignUpComponent {
         this.loading = false;
         console.log('Sign Up Successful! User:', response.username, response);
         
-        // לאחר רישום מוצלח, עדיף לנווט לכניסה או לפרופיל
         this.router.navigateByUrl('/profile'); 
       },
       error: (err: any) => {

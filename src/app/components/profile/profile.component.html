@@ -53,6 +53,20 @@
     <div class="menu-overlay" *ngIf="isAvatarMenuOpen()" (click)="toggleAvatarMenu()"></div>
 
     <div class="profile-layout-container">
+
+
+    <div class="profile-bubbles-row page-bottom-bubbles">
+            <div class="profile-bubble-style funfact-bubble-style">
+                <div class="bubble-title">Fun Fact</div>
+                <div class="bubble-content">{{ randomFact }}</div>
+            </div>
+            <div class="profile-bubble-style quote-bubble-style">
+                <div class="bubble-title">Motivation</div>
+                <div class="bubble-content">“{{ randomQuote }}”</div>
+            </div>
+        </div>
+
+
         
         <div class="profile-card-main card">
             
@@ -86,9 +100,12 @@
                 </div>
             </div>
             
-            <button class="action-btn edit-profile-lg-btn" (click)="toggleEditProfile()" title="Edit Profile Details" *ngIf="isOwner()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.232 6.232z"/></svg>
-            </button>
+            
+           <button class="action-btn edit-profile-lg-btn" (click)="toggleEditProfile()" title="Edit Profile Details" *ngIf="isOwner()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.232 6.232z"/>
+    </svg>
+</button>
         </div>
 
         <div class="edit-bio-modal-overlay" *ngIf="isEditingAbout()" (click)="cancelEditAbout()">

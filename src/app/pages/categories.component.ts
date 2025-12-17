@@ -17,7 +17,6 @@ interface Category {
   selector: 'app-categories',
   standalone: true,
   imports: [CommonModule, RouterModule, FormsModule],
-  // Reverting to external files based on user's query structure
   templateUrl: './categories.component.html',
   styleUrls: ['./categories.component.css']
 })
@@ -50,30 +49,23 @@ export class CategoriesComponent implements OnInit {
   }
 
   loadUserAvatar() {
-    // השתמש ב-authService ישירות, מכיוון שהוא מוזרק
     const userData: UserDTO | null = this.authService.getCurrentUserData();
     
     if (userData) {
-        // ניסיון לגשת לנתיב הנקי (userAvatarUrl)
         const cleanPath = userData.userAvatarUrl || userData.avatarUrl; 
         let finalAvatarUrl: string;
         
         if (cleanPath && typeof cleanPath === 'string' && !cleanPath.startsWith('http')) {
-            // בניית ה-URL המלא לשרת
             finalAvatarUrl = `http://localhost:8080/api/files/${cleanPath}`;
         } else if (cleanPath) {
-            // אם זה כבר URL מלא (Placeholder או URL קודם)
             finalAvatarUrl = cleanPath;
         } else {
-            // ברירת מחדל אם אין תמונה כלל
             const initial = userData.username?.charAt(0).toUpperCase() || 'U';
-            // 💡 השתמש בסגנון ברירת המחדל האמיתי שלך
             finalAvatarUrl = `https://placehold.co/50x50/8e44ad/ffffff?text=${initial}`;
         }
         
         this.userAvatar = finalAvatarUrl;
     } else {
-        // אם אין משתמש מחובר
         this.userAvatar = 'https://placehold.co/50x50/8e44ad/ffffff?text=U';
     }
 }
@@ -91,7 +83,7 @@ export class CategoriesComponent implements OnInit {
   }
 
   open(c: Category) {
-    this.router.navigate(['/categories', c.categoryId]); // Assuming navigation is to /posts
+    this.router.navigate(['/categories', c.categoryId]);
   }
 
   toggleAvatarMenu(): void {
@@ -116,8 +108,6 @@ export class CategoriesComponent implements OnInit {
   createCategory(): void {
     const title = this.newCategoryTitle?.trim();
     if (!title) return;
-    
-    // Payload uses 'name' and 'description' as per API service assumption
     const payload = {
       categoryName: title,
       description: this.newCategoryDesc?.trim() || ''
@@ -125,13 +115,11 @@ export class CategoriesComponent implements OnInit {
     
     this.apiService.createCategory(payload).subscribe({
       next: (newCategory: Category) => {
-        // Assuming the returned object has categoryName
         this.categories.push(newCategory);
         this.closeCreateModal();
       },
       error: (err) => {
         console.error('Error creating category:', err);
-        // Using console error instead of alert
       }
     });
   }
@@ -154,8 +142,6 @@ export class CategoriesComponent implements OnInit {
   saveEditCategory(): void {
     const title = this.editCategoryTitle?.trim();
     if (!title || this.editCategoryId === null) return;
-    
-    // Payload uses 'name' and 'description' as per API service assumption
     const apiPayload = {
       categoryName: title,
       description: this.editCategoryDesc?.trim() || ''
@@ -172,7 +158,6 @@ export class CategoriesComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error updating category:', err);
-        // Using console error instead of alert
       }
     });
   }
@@ -201,7 +186,6 @@ export class CategoriesComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error deleting category:', err);
-        // Using console error instead of alert
       }
     });
   }

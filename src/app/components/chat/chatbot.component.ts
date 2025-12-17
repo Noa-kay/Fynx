@@ -40,8 +40,6 @@ interface Message {
 })
 export class ChatBotComponent implements OnInit {
 
-  readonly API_KEY = "AIzaSyCi3BDcnepy8sBdOBZI_o57uu3n8XbhDs8";
-  readonly API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent';
 
   private mockUser: User = {
     id: 'user-123',
@@ -73,6 +71,7 @@ export class ChatBotComponent implements OnInit {
   
   text: string = '';
   bubbleCount = Array(7).fill(0).map((_, i) => i);
+  readonly BACKEND_CHAT_URL = 'http://localhost:8080/api/skills/chat';
 
   constructor(private http: HttpClient, private authService: AuthService, private router: Router) {}
 
@@ -118,93 +117,70 @@ export class ChatBotComponent implements OnInit {
 
   getAIReply(userQuery: string) {
     const payload = {
-      contents: [{ parts: [{ text: userQuery }] }],
-      tools: [{ "google_search": {} }],
-      systemInstruction: {
-        parts: [{ 
-            text: 'I am Fynx, a helpful and friendly AI assistant. I respond concisely and I am well-structured. I always use the first person and I answer in English.'
-        }]
-      },
+        message: "Please answer the following in English: " + userQuery,
+        userId: this.user().id, 
     };
 
-    if (!this.API_KEY) {
-       console.error("API Key is missing!");
-       this.messages.update(m => m.filter(msg => !msg.isThinking));
-       this.messages.update(m => [...this.messages(), { 
-           role: 'ai', 
-           name: 'Fynx AI', 
-           text: 'Error: API Key is not set.' 
-       }]);
-       return;
+    if (!this.BACKEND_CHAT_URL) {
+        console.error("Backend URL is not configured!");
+        this.messages.update(m => m.filter(msg => !msg.isThinking));
+        this.messages.update(m => [...this.messages(), { 
+            role: 'ai', 
+            name: 'Fynx AI', 
+            text: 'Error: Backend service address is missing.' 
+        }]);
+        return;
     }
 
-    const requestUrl = `${this.API_URL}?key=${this.API_KEY}`;
-
-    this.http.post<any>(requestUrl, payload)
+    this.http.post<any>(this.BACKEND_CHAT_URL, payload)
       .pipe(
         retry({
           count: 3, 
           delay: (error, retryCount) => {
             const delayTime = Math.pow(2, retryCount) * 1000;
-            console.warn(`Retrying in ${delayTime / 1000}s...`);
+            console.warn(`Retrying backend call in ${delayTime / 1000}s...`);
             return of(error).pipe(delay(delayTime));
           }
         }),
         catchError(error => {
-          console.error('AI API Error:', error);
+          console.error('Backend Chat API Error:', error);
           this.messages.update(m => {
-              const updatedMessages = m.filter(msg => !msg.isThinking);
-              return [...updatedMessages, { 
-                  role: 'ai', 
-                  name: 'Fynx AI', 
-                  text: 'A connection error occurred. Please try again later.' 
-              }];
+             const updatedMessages = m.filter(msg => !msg.isThinking);
+             return [...updatedMessages, { 
+                 role: 'ai', 
+                 name: 'Fynx AI', 
+                 text: 'A connection error occurred with the Fynx server. Please try again later.' 
+             }];
           });
           return throwError(() => new Error('API request failed'));
         })
       )
       .subscribe(response => this.processAIResponse(response));
-  }
-
-  processAIResponse(response: any) {
-    const candidate = response.candidates?.[0];
-    const text = candidate?.content?.parts?.[0]?.text;
-
-    this.messages.update(m => m.filter(msg => !msg.isThinking));
-
-    if (!text) {
-        this.messages.update(m => [...this.messages(), { 
-            role: 'ai', 
-            name: 'Fynx AI', 
-            text: 'Sorry, I could not generate a response.' 
-        }]);
-        return;
-    }
-
-    let sources: { uri: string, title: string }[] = [];
-    const groundingMetadata = candidate.groundingMetadata;
-
-    if (groundingMetadata?.groundingAttributions) {
-    sources = groundingMetadata.groundingAttributions
-        .map((a: any) => ({
-            uri: a.web?.uri,
-            title: a.web?.title,
-        }))
-        .filter((s: { uri?: string; title?: string }): s is { uri: string; title: string } => !!s.uri && !!s.title);
 }
 
-    this.messages.update(m => [...m, { 
-        role: 'ai', 
-        name: 'Fynx AI', 
-        text: text, 
-        sources: sources.length ? sources : undefined
-    }]);
-  }
 
-  goToHome() { console.log('Navigating to Home'); }
-  goToSkillsCategories() { console.log('Navigating to Skills'); }
-  goToAiChat() { console.log('Already at AI Chat'); }
-  goToProfile() { console.log('Navigating to Profile'); }
+processAIResponse(response: any) {
+   
+    const text = response.response; 
+    this.messages.update(m => m.filter(msg => !msg.isThinking)); 
+    if (!text || text.trim().length === 0) { 
+        this.messages.update(m => [...this.messages(), { 
+            role: 'ai', 
+            name: 'Fynx AI', 
+            text: 'Sorry, the server returned an empty response.' 
+        }]);
+        return;
+    }
+    
+    this.messages.update(m => [...this.messages(), { 
+        role: 'ai', 
+        name: 'Fynx AI', 
+        text: text, 
+        sources: undefined 
+    }]);
+    
+    setTimeout(() => this.scrollToBottom(), 10); 
+}
 
   signOut() { 
     try { this.authService.logout(); } catch {}

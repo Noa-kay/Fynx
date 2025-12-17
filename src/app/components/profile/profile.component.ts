@@ -33,6 +33,31 @@ const INITIAL_USER_DATA: UserProfile = {
 export class ProfileComponent implements OnInit {
   
   user = signal<UserProfile>(INITIAL_USER_DATA); 
+
+
+  public funFacts: string[] = [
+    "Learning a new skill just 15 minutes a day can make you an expert in a year.",
+    "Teaching others is one of the best ways to master a topic yourself.",
+    "Taking short breaks while studying improves memory and focus.",
+    "Writing code regularly—even small projects—builds real confidence.",
+    "Most people underestimate how much they can learn in a month of daily practice.",
+    "Creativity grows when you combine skills from different fields.",
+    "Explaining a concept out loud (even to yourself) helps you understand it better.",
+    "You don’t need talent to get started—just consistency and curiosity!"
+  ];
+  public randomFact: string = '';
+
+  public quotes: string[] = [
+    "The best way to get started is to quit talking and begin doing.",
+    "Success is not in what you have, but who you are.",
+    "Dream bigger. Do bigger.",
+    "Don’t watch the clock; do what it does. Keep going.",
+    "Great things never come from comfort zones.",
+    "Push yourself, because no one else is going to do it for you."
+  ];
+  public randomQuote: string = '';
+
+
   
   private router = inject(Router);
   private authService = inject(AuthService);
@@ -55,14 +80,10 @@ export class ProfileComponent implements OnInit {
     this.editedName = this.user().name;
     this.editedTitle = this.user().title;
     this.editedLocation = this.user().location;
+    this.randomFact = this.funFacts[Math.floor(Math.random() * this.funFacts.length)];
+    this.randomQuote = this.quotes[Math.floor(Math.random() * this.quotes.length)];
   }
 
-
-
-// 🚨 פונקציית הטעינה המתוקנת: משתמשת ב-avatarUrl שנשמר ב-DTO
-// בתוך profile.component.ts
-
-// 💡 בתוך profile.component.ts - במקום הפונקציה loadUserProfile הנוכחית
 
 loadUserProfile() {
     const userData: UserDTO | null = this.authService.currentUser();
@@ -70,24 +91,14 @@ loadUserProfile() {
     console.log('Auth user data:', userData);
     
     if (userData && userData.userId) {
-        
-        // 🚨 הסר את ה-subscribe/error block
-        // בצע את הקריאה ל-API, אבל אל תטפל בשגיאה כאן.
-        // ה-AuthInterceptor יתפוס את שגיאת 401 וינתק את המשתמש.
-        
         this.userService.getCurrentUserProfile(userData.userId).subscribe({
             next: (fullUserDto: UserDTO) => {
-                // הצלחה: השרת אישר את הסשן והחזיר DTO מלא
                 this.authService.updateCurrentUser(fullUserDto); 
                 this.updateUIFromUserDto(fullUserDto);
             },
             error: (err) => {
-                // אם הקריאה נכשלה (401), האינטרספטור כבר ניתק אותנו.
-                // נטפל בשגיאות אחרות או נסמוך על האינטרספטור.
-                
-                // 🚨 אם זה לא 401, נטפל בזה. אם זה 401, אין צורך
                 if (err.status !== 401) {
-                    this.updateUIFromUserDto(userData); // נשתמש בנתונים השבורים מה-localStorage בינתיים
+                    this.updateUIFromUserDto(userData); 
                 }
             }
         });
@@ -98,7 +109,6 @@ loadUserProfile() {
     }
 }
 
-// 💡 פונקציה חדשה שהופרדה לטובת עדכון ה-UI
 private updateUIFromUserDto(userData: UserDTO) {
     const cleanPath = userData.userAvatarUrl || userData.avatarUrl; 
     let finalAvatarUrl = INITIAL_USER_DATA.avatarUrl; 
@@ -110,14 +120,15 @@ private updateUIFromUserDto(userData: UserDTO) {
             finalAvatarUrl = cleanPath;
         }
     }
-    
-    this.user.update(profile => ({
-        ...profile,
-        name: userData.username,
+    this.user.set({
+        name: userData.username || 'User',
+        title: userData.title || 'No Title Set',
+        location: userData.location || 'Unknown Location',
+        bio: userData.bio || 'No bio yet...',
         avatarUrl: finalAvatarUrl
-    }));
-    console.log('Updated profile with full avatar URL:', finalAvatarUrl);
+    });
 }
+
 
   isOwner(): boolean {
       return this._isOwner();
@@ -133,17 +144,15 @@ private updateUIFromUserDto(userData: UserDTO) {
     this.isAvatarMenuOpen.set(false); 
     this.router.navigate(['/sign-in']); 
   }
-// בקובץ profile.component.ts
 
-// בקובץ profile.component.ts - הפונקציה onFileSelected המלאה והמתוקנת
 
 onFileSelected(event: Event): void {
         const input = event.target as HTMLInputElement;
         if (input.files && input.files.length > 0) {
             const file = input.files[0];
             
-            // 🚨 תיקון 1: חילוץ userId
             const userDto = this.authService.currentUser();
+            console.log('Current user data from AuthService:', userDto); 
             const userId = userDto?.userId;
             
             if (!userId) {
@@ -151,34 +160,25 @@ onFileSelected(event: Event): void {
                 return;
             }
             
-            // 1. הכנת ה-FormData
             const formData = new FormData();
-            formData.append('file', file, file.name); // 🚨 ודא שזה קיים
+            formData.append('file', file, file.name); 
             
             console.log("Sending avatar upload request to backend...");
 
   this.userService.uploadAvatar(userId, formData).subscribe({
-    next: (response: any) => { // מקבלים את תגובת השרת (כנראה רק הנתיב החדש)
-        
-        // 1. קרא את הנתונים המלאים הקיימים (מה-localStorage)
+    next: (response: any) => { 
         const currentDto = this.authService.currentUser();
         
         if (currentDto) {
-            // חלץ את הנתיב החדש מכל שדה שהשרת החזיר
             const newPath = response.userAvatarUrl || response.avatarUrl || response.path; 
-            
-            // 2. מיזוג: צור DTO חדש המשלב את הישן והנתיב החדש
+    
             const updatedDto: UserDTO = {
                 ...currentDto,
-                // אנו דורסים את הנתיב הישן בשני השדות כדי לשמור על עקביות
                 userAvatarUrl: newPath, 
-                avatarUrl: newPath, // אם השרת החזיר נתיב חדש
+                avatarUrl: newPath, 
             };
             
-            // 3. שמירה: שולח את ה-DTO המלא והמעודכן ל-AuthService כדי שיישמר ב-localStorage
             this.authService.updateCurrentUser(updatedDto); 
-            
-            // 4. ריענון ה-UI
             this.loadUserProfile(); 
             
             console.log('Avatar successfully uploaded, DTO merged and saved.');
@@ -207,16 +207,36 @@ onFileSelected(event: Event): void {
   }
 
   saveProfileDetails(): void {
-    if (this.isOwner()) {
-        this.user.update(currentProfile => ({
-            ...currentProfile,
-            name: this.editedName,
-            title: this.editedTitle,
-            location: this.editedLocation,
-        }));
-        this.isEditingProfile.set(false);
-    }
-  }
+  const currentUser = this.authService.currentUser();
+  if (this.isOwner() && currentUser?.userId) {
+    const updatedData = {
+      username: this.editedName,
+      title: this.editedTitle,
+      location: this.editedLocation,
+      bio: this.user().bio, 
+      email: currentUser.email 
+    };
+
+    this.userService.updateUser(currentUser.userId, updatedData).subscribe({
+      next: (response: UserDTO) => {
+        this.user.update(currentProfile => ({
+          ...currentProfile,
+          name: response.username || this.editedName,
+          title: response.title || this.editedTitle,
+          location: response.location || this.editedLocation,
+        }));
+       this.authService.updateCurrentUser({ ...currentUser, username: this.editedName });
+        
+        this.isEditingProfile.set(false);
+        console.log('Profile saved successfully in DB');
+      },
+      error: (err) => {
+        console.error('Update failed:', err);
+        alert('Error in saving the data in the server');
+      }
+    });
+  }
+}
 
   cancelEditProfile(): void {
       this.editedName = this.user().name;
@@ -235,14 +255,30 @@ onFileSelected(event: Event): void {
   }
 
   saveBio(): void {
-      if (this.isOwner()) {
-          this.user.update(currentProfile => ({
-              ...currentProfile,
-              bio: this.editedBio
-          }));
-          this.isEditingAbout.set(false);
-      }
-  }
+  const currentUser = this.authService.currentUser();
+  if (this.isOwner() && currentUser?.userId) {
+    
+    const updatedData = {
+      bio: this.editedBio,
+      username: this.user().name,
+      title: this.user().title,
+      location: this.user().location,
+      email: currentUser.email
+    };
+
+    this.userService.updateUser(currentUser.userId, updatedData).subscribe({
+      next: (response: UserDTO) => {
+        this.user.update(currentProfile => ({
+          ...currentProfile,
+          bio: response.bio || this.editedBio
+        }));
+        this.isEditingAbout.set(false);
+        console.log('Bio saved successfully in DB');
+      },
+      error: (err) => console.error('Failed to update bio:', err)
+    });
+  }
+}
 
   cancelEditAbout(): void {
       this.editedBio = this.user().bio;

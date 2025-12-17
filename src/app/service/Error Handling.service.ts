@@ -58,8 +58,6 @@ export class ErrorHandlingService {
    * @param message The message to display.
    */
   private displayUserMessage(message: string): void {
-    // === IMPORTANT: Replace this with your custom UI implementation (e.g., a Snackbar or Toast) ===
-    console.error(`USER MESSAGE DISPLAYED: ${message}`);
-    // Example: this.toastService.showError(message);
+    console.error(`USER MESSAGE DISPLAYED: ${message}`)
   }
 }

@@ -5,6 +5,9 @@ export interface UserDTO {
     email: string;
     avatarUrl?: string | null;
     userAvatarUrl?: string | null;
+    title?: string;
+    location?: string;
+    bio?: string;
   
 }
 

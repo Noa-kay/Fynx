@@ -33,29 +33,16 @@ private loadUserFromStorage() {
             console.log('RAW JSON from localStorage:', userData); 
             
             let loadedUser: UserDTO = JSON.parse(userData) as UserDTO;
-            
-            // 🚨 בדיקה אם שדות האווטאר חסרים
             if (loadedUser && loadedUser.username && !loadedUser.userAvatarUrl && !loadedUser.avatarUrl) {
-                
-                // אם חסר - זה אומר שהנתונים נמחקו / שוכתבו על ידי DTO חלקי.
-                // הפתרון המהיר: אנחנו לא יכולים לשחזר את ה-UUID האמיתי מ-localStorage 
-                // כי הוא נמחק, אז נצטרך להסתמך על תמונת ה-Placeholder.
-                
-                // הנתונים ב-loadedUser הם חלקיים, אנו בונים מחדש DTO תקין
                 const defaultAvatarUrl = ('https://placehold.co/130x130/8e44ad/ffffff?text=' + loadedUser.username.charAt(0).toUpperCase());
-
                 this.currentUserData = {
                     ...loadedUser,
-                    userAvatarUrl: null, // אין לנו את ה-UUID, אז נשאר null
-                    avatarUrl: defaultAvatarUrl // נאלצים להשתמש ב-Placeholder
+                    userAvatarUrl: null, 
+                    avatarUrl: defaultAvatarUrl 
                 };
                 
-                // 🚨 🚨 פעולת חירום: שכתוב הנתונים המלאים (גם אם חלקיים) מיד לאחר טעינה
-                // זה מונע מ-setAndSaveUser לרוץ שוב ומנסה לייצב את ה-DTO הנוכחי
-                // localStorage.setItem('fynx_user', JSON.stringify(this.currentUserData)); // 🛑 ודא ששורה זו אינה מופעלת כאן! (כדי לא לשבור את ה-localStorage)
                 
             } else if (loadedUser && loadedUser.username) {
-                // 💡 אם ה-JSON הגיע מלא (כפי שאמור לקרות לאחר Sign In ראשוני)
                 const cleanPath = loadedUser.userAvatarUrl || loadedUser.avatarUrl; 
                 const defaultAvatarUrl = ('https://placehold.co/130x130/8e44ad/ffffff?text=' + loadedUser.username.charAt(0).toUpperCase());
                 
@@ -80,30 +67,19 @@ private loadUserFromStorage() {
 }
 
 updateCurrentUser(user: UserDTO): void {
-    // קורא ל-setAndSaveUser שדואג למלא את כל השדות הנחוצים (כולל userAvatarUrl)
     this.setAndSaveUser(user); 
 }
 
 
-// פונקציה פרטית שמבצעת את שמירת המשתמש והגדרת ה-avatar באופן עקבי
 private setAndSaveUser(response: UserDTO): void {
-    
-    // 1. נסה למצוא את הנתיב הנקי מתוך התגובה
     const cleanPath = response.userAvatarUrl || response.avatarUrl; 
-    
-    // 2. בניית תמונת ברירת המחדל
     const defaultAvatarUrl = response.username ? 
         ('https://placehold.co/130x130/8e44ad/ffffff?text=' + response.username.charAt(0).toUpperCase()) : 
         'https://placehold.co/130x130/8e44ad/ffffff?text=U';
         
-    // 3. יצירת אובייקט UserDTO מלא עם עקביות בשמות
     this.currentUserData = { 
-        ...response, // העתקת שדות בסיסיים (userId, username, email)
-        
-        // ✅ שמירת הנתיב הנקי (ה-UUID) בשדה שבו השרת שומר אותו
+        ...response,
         userAvatarUrl: cleanPath || null, 
-        
-        // ✅ שמירת הנתיב הנקי/ברירת המחדל בשדה הראשי של הפרונט
         avatarUrl: cleanPath || defaultAvatarUrl 
     };
     
@@ -120,7 +96,6 @@ private setAndSaveUser(response: UserDTO): void {
     return this.http.post<UserDTO>(this.base + '/users/signin', creds)
       .pipe(
         tap(response => {
-          // ✅ שמירת המשתמש לאחר כניסה
           this.setAndSaveUser(response);
         })
       );
@@ -131,7 +106,6 @@ private setAndSaveUser(response: UserDTO): void {
       .pipe(
         tap(response => {
            console.log('User registered successfully:', response.username);
-           // ✅ שמירת המשתמש החדש ל-AuthService ול-localStorage
            this.setAndSaveUser(response);
         })
       );
@@ -154,20 +128,13 @@ private setAndSaveUser(response: UserDTO): void {
   getToken(){ return getCookie('fynx_token'); }
 
   getCurrentUserData(): UserDTO | null { 
-    // ✅ תיקון 3 (ניקיון): שיטה זו משמשת ב-category-posts.component.ts.
-    // היא קוראת את המשתנה השמור בזיכרון המיידי.
     return this.currentUserData;
   }
 
 currentUser(): UserDTO | null { 
     if (!this.currentUserData) {
-        // אם אין נתונים בזיכרון, טען אותם מה-localStorage.
-        // זה יחזיר את נתוני המשתמש המלאים (כולל התמונה).
         this.loadUserFromStorage();
     }
-    
-    // אם ה-Token פג תוקף, קריאת API עתידית תיכשל (401), ושם ה-Interceptor
-    // יטפל בניקוי הנתונים.
     return this.currentUserData; 
 }
 

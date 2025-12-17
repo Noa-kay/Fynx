@@ -79,11 +79,12 @@
 }
 
 .app-header-inner {
-  max-width: 900px;
+  max-width: 1200px; /* הגדלתי מעט כדי שיראה טוב על מסכים רחבים, שנה לפי הצורך */
   margin: 0 auto;
   display: flex;
-  justify-content: space-between;
+  justify-content: space-between; /* זה מה שדוחף את הצדדים לקצוות */
   align-items: center;
+  width: 100%;
 }
 
 .logo {
@@ -170,14 +171,14 @@
   border-radius: 0.5rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   padding: 0.25rem;
-  z-index: 150;
+  z-index: 101;
 }
 
 .menu-item {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  width: 100%;
+  width: auto;
   padding: 0.5rem 0.75rem;
   text-align: left;
   font-size: 0.875rem;
@@ -217,7 +218,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 100;
+  z-index: 99;
 }
 
 /* Content Layout */
@@ -250,7 +251,7 @@
 }
 
 .feed-toolbar .search-box input {
-  width: 100%;
+  width: 97%;
   background: rgba(255,255,255,0.12);
   border: 1px solid rgba(255,255,255,0.2);
   border-radius: 8px;
@@ -404,10 +405,15 @@
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  direction: ltr;
+  text-align: left;
 }
 
 .post-body p {
   margin: 0;
+  direction: ltr;
+  text-align: left;
+  height: 70px;
 }
 
 .post-media {
@@ -415,19 +421,25 @@
   border-radius: 5px;
   overflow: hidden;
   max-width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
 }
 
 .post-media img {
   width: 100%;
-  height: 160px;
-  object-fit: cover;
+  height: auto;
+  max-height: 600px;
+  max-width: 600px;
+  object-fit:contain;
   display: block;
 }
 
 .post-media video {
   width: 100%;
-  height: 160px;
-  object-fit: cover;
+  height: auto;
+  object-fit: contain;
   display: block;
   background: #000;
 }

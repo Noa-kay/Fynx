@@ -13,6 +13,7 @@ import { UserDTO } from '../service/models/auth.model';
   templateUrl: './category-posts.component.html',
   styleUrls: ['./category-posts.component.css']
 })
+
 export class CategoryPostsComponent implements OnInit {
   categoryId: string | null = null;
   categoryName: string = '';
@@ -61,18 +62,14 @@ loadUserAvatar() {
     const userData: UserDTO | null = this.authService.getCurrentUserData();
     
     if (userData) {
-        // 🚨 תיקון קריטי: ניסיון לגשת לנתיב הנקי (userAvatarUrl) ואז ל-avatarUrl
         const cleanPath = userData.userAvatarUrl || userData.avatarUrl; 
         let finalAvatarUrl: string;
         
         if (cleanPath && typeof cleanPath === 'string' && !cleanPath.startsWith('http')) {
-            // בניית ה-URL המלא לשרת
             finalAvatarUrl = `http://localhost:8080/api/files/${cleanPath}`;
         } else if (cleanPath) {
-            // אם זה כבר URL מלא (Placeholder או URL קודם)
             finalAvatarUrl = cleanPath;
         } else {
-            // ברירת מחדל אם אין תמונה כלל
             const initial = userData.username?.charAt(0).toUpperCase() || 'U';
             finalAvatarUrl = `https://placehold.co/40x40/8e44ad/ffffff?text=${initial}`;
         }
@@ -80,19 +77,16 @@ loadUserAvatar() {
         this.userAvatar = finalAvatarUrl;
         console.log('Header Avatar URL set to:', this.userAvatar);
     } else {
-        // אם אין משתמש מחובר
         this.userAvatar = 'https://placehold.co/40x40/8e44ad/ffffff?text=U';
     }
 }
 
 
 loadAllCategories() {
-    this.api.getCategories().subscribe({ // נניח ש-api.getCategories קיימת
+    this.api.getCategories().subscribe({ 
       next: (cats: any[]) => {
         this.allCategories = cats || [];
         console.log('All Categories loaded for lookup:', this.allCategories);
-        
-        // 🎯 3. מצא את שם הקטגוריה רק לאחר שהנתונים נטענו
         this.setCategoryNameFromApi(); 
       },
       error: (err) => console.error('Error loading categories:', err)
@@ -114,7 +108,7 @@ loadAllCategories() {
     if (foundCategory) {
       this.categoryName = foundCategory.categoryName;
     } else {
-      this.categoryName = `Category #${this.categoryId}`; // Fallback
+      this.categoryName = `Category #${this.categoryId}`; 
     }
     
     console.log(`Category Name set dynamically to: ${this.categoryName}`);
@@ -126,7 +120,6 @@ loadAllCategories() {
       this.api.getPostsByCategory(this.categoryId).subscribe(
         (list: any) => {
           this.posts = list || [];
-          // 💡 הדפסה לווידוא: כמה פוסטים נטענו?
           console.log(`Posts loaded successfully (${this.posts.length} items):`, this.posts); 
         }
       );
@@ -163,7 +156,6 @@ loadAllCategories() {
     this.selectedFile = null;
     this.previewUrl = null;
     this.previewType = null;
-    // ניקוי מצב עריכה
     this.isEditMode = false;
     this.editingPostId = null;
   }
@@ -176,25 +168,20 @@ loadAllCategories() {
         return;
     }
 
-    // יצירת SkillDTO
     const skillDTO = {
       title: this.postTitle.trim(),
       description: this.postBody.trim(),
       mediaUrl: '', 
-      
-      // 🛑 אלו הם השדות היחידים שצריכים להיות:
       categoryId: Number(this.categoryId), 
       userId: currentUser.userId 
     };
 
     const formData = new FormData();
 
-    // 1. הוספת הקובץ (image)
     if (this.selectedFile) {
       formData.append('image', this.selectedFile, this.selectedFile.name);
     } 
 
-    // 2. תיקון שגיאת 415: שליחת ה-DTO כ-Blob עם Content-Type מפורש
     const skillBlob = new Blob([JSON.stringify(skillDTO)], {
         type: 'application/json'
     });
@@ -202,7 +189,6 @@ loadAllCategories() {
     formData.append('skill', skillBlob, 'skill.json'); 
 
     if (this.isEditMode && this.editingPostId !== null) {
-      // 🚨 תיקון: אם יש קובץ, נשתמש ב-FormData, אחרת נשלח JSON רגיל
       const payload = this.selectedFile ? formData : skillDTO; 
 
       this.api.updatePost(this.editingPostId, payload).subscribe({
@@ -238,7 +224,7 @@ loadAllCategories() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  requestDeletePost(postId: number, event?: Event) {
+  requestDeletePost(postId: number | null, event?: Event) {
     if (event) event.stopPropagation();
     this.pendingDeletePostId = postId;
     this.deleteErrorMessage = null; 
@@ -251,7 +237,8 @@ loadAllCategories() {
     this.deleteErrorMessage = null;
   }
 
-  deletePost(postId: number) {
+  deletePost(postId: number | null) {
+    if(!postId) return
     this.api.deletePost(postId).subscribe({
       next: () => {
         const index = this.posts.findIndex(p => p.skillId === postId); 
@@ -268,117 +255,78 @@ loadAllCategories() {
     });
   }
 
-  likePost(post: any) {
-    const currentUser = this.authService.getCurrentUserData();
-    const username = currentUser?.username || 'Anonymous';
-    
-    // Initialize likedBy array if it doesn't exist
-    const likedBy = post.likedBy || [];
-    
-    // Check if user already liked this post
-    const alreadyLiked = likedBy.includes(username);
-    
-    let updatedLikedBy: string[];
-    let updatedLikes: number;
-    
-    if (alreadyLiked) {
-      // Unlike: remove user from likedBy array
-      updatedLikedBy = likedBy.filter((user: string) => user !== username);
-      updatedLikes = Math.max(0, (post.likes || 0) - 1);
-    } else {
-      // Like: add user to likedBy array
-      updatedLikedBy = [...likedBy, username];
-      updatedLikes = (post.likes || 0) + 1;
-    }
-    
-    const updatedPost = { 
-      ...post, 
-      likes: updatedLikes,
-      likedBy: updatedLikedBy
-    };
-    
- 
-    this.api.updatePost(post.skillId, updatedPost).subscribe({
-      next: (updated: any) => {
-        const index = this.posts.findIndex(p => p.skillId === post.skillId); 
-        if (index > -1) {
-          this.posts[index] = updated;
-        }
-      },
-      error: (err) => {
-        console.error('Error liking post:', err);
-      }
-    });
-  }
+isPostOwner(post: any): boolean {
+    const currentUser = this.authService.getCurrentUserData();
+    
+    if (!currentUser) return false;
+    const currentUsername = currentUser.username?.toLowerCase(); 
+    const postAuthorName = post.username?.toLowerCase(); 
 
-  // בתוך CategoryPostsComponent
+    const isMatch = currentUsername === postAuthorName;
+    console.group(`Post ID: ${post.skillId}`);
+    console.log(`Current User Username: ${currentUsername}`);
+    console.log(`Post Author Username (p.username): ${postAuthorName}`); 
+    console.log(`Match Result: ${isMatch}`);
+    console.groupEnd();
+
+    return isMatch;
+}
+
+
+  likePost(post: any) {
+    const currentUser = this.authService.getCurrentUserData();
+    const userId = currentUser?.userId;
+
+    if (!userId) {
+        console.warn('User not logged in');
+        return;
+    }
+    this.api.likePost(post.skillId, userId).subscribe({ 
+      next: (updated: any) => { 
+        const index = this.posts.findIndex(p => p.skillId === post.skillId); 
+        if (index > -1) {
+          this.posts[index] = updated; 
+        }
+      },
+      error: (err) => console.error('Error liking post:', err)
+    });
+}
+
+
 toggleComments(postId: number) {
     this.showCommentsForPost = this.showCommentsForPost === postId ? null : postId;
-    
-    // 💡 תיקון: אם פותחים את התיבה, ודא שהקלט עבור הפוסט הזה מאופס.
     if (this.showCommentsForPost === postId) {
         this.newCommentsInput[postId] = ''; 
     }
 }
 
-  // בתוך CategoryPostsComponent
-// בתוך CategoryPostsComponent.ts
 
 addComment(post: any) {
-    // 1. קריאת טקסט התגובה
     const commentText = this.newCommentsInput[post.skillId];
     if (!commentText || !commentText.trim()) return;
 
     const currentUser = this.authService.getCurrentUserData();
-    const comment = {
-        // ודא שאתה משתמש ב-'username' אם ה-Backend דורש זאת, או 'user' כפי שהיה קודם
-        user: currentUser?.username || 'Anonymous', 
-        text: commentText.trim(),
-        date: new Date().toISOString()
+    if (!currentUser || !currentUser.userId) {
+        console.error('User not authenticated or missing userId.');
+        return;
+    }
+
+    const commentRequest = {
+        userId: currentUser.userId, 
+        content: commentText.trim(),
+        skillId: post.skillId 
     };
 
-    const comments = post.comments || [];
-    comments.push(comment);
-
-    // 2. יצירת אובייקט העדכון
-    const updatedPostDTO = { 
-        ...post, 
-        comments,
-        // ודא שאתה שולח רק שדות שהשרת באמת צריך לעדכן
-        title: post.title,
-        description: post.description,
-        categoryId: post.categoryId,
-        userId: post.userId,
-        mediaUrl: post.mediaUrl || '',
-        // ייתכן שתצטרך לשלוח את כל השדות החשובים של הפוסט
-    };
-
-    // 3. 🛑 יצירת FormData (התיקון לשגיאת 415)
-    const formData = new FormData();
-
-    const skillBlob = new Blob([JSON.stringify(updatedPostDTO)], {
-        type: 'application/json'
-    });
-    
-    // הוספת ה-JSON כחלק מ-FormData
-    formData.append('skill', skillBlob, 'skill.json'); 
-    // אין צורך לצרף קובץ כי אנחנו רק מוסיפים תגובה
-
-    // 4. שליחה לשרת
-    // הערה: יש לוודא ש-this.api.updatePost() מקבלת גם FormData
-    this.api.updatePost(post.skillId, formData).subscribe({
-        next: (updated: any) => {
-            const index = this.posts.findIndex(p => p.skillId === post.skillId); 
+    this.api.addComment(post.skillId, commentRequest).subscribe({
+        next: (updatedSkill: any) => {
+            const index = this.posts.findIndex(p => p.skillId === post.skillId);
             if (index > -1) {
-                // עדכון הפוסט עם הנתונים שחזרו מהשרת
-                this.posts[index] = updated; 
+                this.posts[index] = updatedSkill;
             }
-            this.newCommentsInput[post.skillId] = ''; 
+            this.newCommentsInput[post.skillId] = '';
         },
         error: (err) => {
             console.error('Error adding comment:', err);
-            // הצגת הודעת שגיאה למשתמש
-            console.error('Failed to add comment.'); 
         }
     });
 }
