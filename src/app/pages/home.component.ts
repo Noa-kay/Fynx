@@ -8,182 +8,128 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule, RouterModule],
   template: `
     <div class="home-wrapper">
-      <div class="bubble-bg">
-        <div class="bubble bubble1"></div>
-        <div class="bubble bubble2"></div>
-        <div class="bubble bubble3"></div>
-        <div class="bubble bubble4"></div>
+      <div class="posts-grid">
+        <div class="post-item" *ngFor="let i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]">
+          <img [src]="'https://picsum.photos/400/300?nature&random=' + i" alt="nature">
+        </div>
+      </div>
+      
+      <div class="brand-overlay"></div>
+
+      <div class="floating-icons">
+        <i class="fa-solid fa-camera icon i1"></i>
+        <i class="fa-solid fa-music icon i2"></i>
+        <i class="fa-solid fa-code icon i3"></i>
+        <i class="fa-solid fa-lightbulb icon i4"></i>
+        <i class="fa-solid fa-palette icon i5"></i>
       </div>
 
-      <div class="content">
-        <h1>Fynx</h1>
-        <p class="tagline">Connect, Share, Discover — Your Creative Community</p>
+      <div class="glass-card">
+        <div class="brand-identity">
+          <img src="assets/images/Logo.png" alt="Logo" class="main-logo-img">
+          <h1 class="brand-name-full">Fynx</h1>
+        </div>
+        
+        <p class="tagline">Connect, Share, Discover</p>
+        
+        <div class="separator"></div>
+
         <p class="description">
           Join a vibrant community where creators, developers, designers, and artists share their passion and knowledge.
         </p>
-
+        
         <div class="buttons">
-          <button class="btn primary" (click)="router.navigate(['/sign-in'])">Sign In</button>
-          <button class="btn secondary" (click)="router.navigate(['/sign-up'])">Sign Up</button>
+          <button class="btn btn-primary" (click)="router.navigate(['/sign-up'])">Get Started</button>
+          <button class="btn btn-outline" (click)="router.navigate(['/sign-in'])">Sign In</button>
         </div>
       </div>
     </div>
   `,
   styles: [`
-    :host {
-      display: block;
-      width: 100%;
-      min-height: 100vh;
-      background: linear-gradient(135deg, #00bcd4, #8e44ad, #ff9933, #ff4d94);
-      font-family: 'Inter', 'Arial', sans-serif;
-      overflow: hidden;
+    /* צבע לבן גורף לכל הטקסט והאייקונים */
+    .glass-card, .brand-name-full, .tagline, .description, .icon {
+      color: #ffffff !important;
     }
 
-    .home-wrapper {
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 20px;
+    .home-wrapper { 
+      position: relative; height: 100vh; width: 100%; 
+      display: flex; justify-content: center; align-items: center; 
+      overflow: hidden; background: #0b0b0d; 
     }
 
-    .bubble-bg {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      overflow: hidden;
+    .posts-grid { 
+      position: absolute; inset: -5%; display: grid; 
+      grid-template-columns: repeat(5, 1fr); gap: 20px; 
+      transform: rotate(-2deg) scale(1.1); z-index: 1; 
     }
 
-    .bubble {
-      position: absolute;
-      border-radius: 50%;
-      opacity: 0.08;
-      mix-blend-mode: overlay;
+    .post-item img { width: 100%; height: 230px; object-fit: cover; border-radius: 30px; opacity: 0.3; }
+
+    /* התיקון לרקע מחליף הצבעים */
+    .brand-overlay { 
+      position: absolute; inset: 0; 
+      background: linear-gradient(135deg, #00bcd4, #8e44ad, #ff4d94, #ff9933); 
+      background-size: 400% 400%; /* הגדלנו כדי שיהיה לאנימציה לאן לזוז */
+      z-index: 2; 
+      opacity: 0.8;
+      animation: gradientMove 12s ease infinite alternate; /* האנימציה חזרה! */
     }
 
-    .bubble1 {
-      width: 200px;
-      height: 200px;
-      top: 10%;
-      left: 5%;
-      background: rgba(255,255,255,0.1);
-      animation: float 20s ease-in-out infinite;
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
 
-    .bubble2 {
-      width: 150px;
-      height: 150px;
-      top: 50%;
-      right: 10%;
-      background: rgba(255,255,255,0.08);
-      animation: float 25s ease-in-out infinite reverse;
+    /* אייקונים צפים */
+    .icon {
+      position: absolute; font-size: 2.5rem; opacity: 0.6; z-index: 3;
+      animation: floatIcon 6s infinite ease-in-out alternate;
     }
 
-    .bubble3 {
-      width: 180px;
-      height: 180px;
-      bottom: 5%;
-      left: 20%;
-      background: rgba(255,255,255,0.1);
-      animation: float 22s ease-in-out infinite;
+    @keyframes floatIcon {
+      from { transform: translateY(0) rotate(0deg); }
+      to { transform: translateY(-20px) rotate(10deg); }
     }
 
-    .bubble4 {
-      width: 120px;
-      height: 120px;
-      top: 30%;
-      right: 20%;
-      background: rgba(255,255,255,0.06);
-      animation: float 18s ease-in-out infinite reverse;
+    .i1 { top: 15%; left: 10%; }
+    .i2 { top: 25%; right: 12%; }
+    .i3 { bottom: 20%; left: 15%; }
+    .i4 { top: 10%; left: 45%; }
+    .i5 { bottom: 15%; right: 10%; }
+
+    .brand-identity {
+      display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;
     }
 
-    @keyframes float {
-      0%, 100% { transform: translateY(0px) translateX(0px); }
-      50% { transform: translateY(-30px) translateX(20px); }
+    .main-logo-img {
+      width: 120px; height: 120px; object-fit: contain; margin-bottom: 15px;
+      filter: drop-shadow(0 10px 15px rgba(0,0,0,0.3));
     }
 
-    .content {
-      position: relative;
-      z-index: 10;
-      text-align: center;
-      max-width: 600px;
-      color: white;
+    .brand-name-full { font-size: 4.2rem; font-weight: 900; margin: 0; letter-spacing: -1px; line-height: 1; }
+
+    .tagline { font-size: 1.4rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; margin: 15px 0; }
+
+    .separator { width: 50px; height: 2px; background: rgba(255,255,255,0.4); margin: 25px auto; }
+
+    .glass-card {
+      position: relative; z-index: 20; width: 550px; padding: 60px 40px;
+      background: rgba(255, 255, 255, 0.12); backdrop-filter: blur(30px);
+      border-radius: 60px; border: 1px solid rgba(255, 255, 255, 0.2);
+      text-align: center; box-shadow: 0 40px 80px rgba(0,0,0,0.4);
     }
 
-    h1 {
-      font-size: 4rem;
-      font-weight: 800;
-      margin: 0 0 12px 0;
-      text-shadow: 0 4px 20px rgba(0,0,0,0.3);
-      letter-spacing: -0.02em;
-    }
+    .description { font-size: 1.15rem; line-height: 1.6; margin-bottom: 40px; opacity: 0.9; }
 
-    .tagline {
-      font-size: 1.8rem;
-      font-weight: 700;
-      margin: 0 0 16px 0;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    }
+    .buttons { display: flex; gap: 20px; justify-content: center; }
+    
+    .btn { padding: 16px 40px; border-radius: 50px; font-weight: 800; cursor: pointer; border: none; transition: 0.3s; font-size: 0.9rem; text-transform: uppercase; }
 
-    .description {
-      font-size: 1.1rem;
-      line-height: 1.6;
-      margin: 0 0 32px 0;
-      color: rgba(255,255,255,0.9);
-      text-shadow: 0 1px 5px rgba(0,0,0,0.2);
-    }
+    .btn-primary { background: #ffffff !important; color: #1a1a1a !important; }
+    .btn-outline { background: transparent !important; border: 2px solid #ffffff !important; color: #ffffff !important; }
 
-    .buttons {
-      display: flex;
-      gap: 16px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    .btn {
-      padding: 14px 32px;
-      font-size: 1rem;
-      font-weight: 700;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-    }
-
-    .btn.primary {
-      background: linear-gradient(90deg, #ff9933, #ff4d94);
-      color: white;
-    }
-
-    .btn.primary:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 15px 40px rgba(255,153,51,0.4);
-    }
-
-    .btn.secondary {
-      background: rgba(255,255,255,0.2);
-      color: white;
-      border: 2px solid rgba(255,255,255,0.5);
-      backdrop-filter: blur(10px);
-    }
-
-    .btn.secondary:hover {
-      background: rgba(255,255,255,0.3);
-      border-color: rgba(255,255,255,0.8);
-      transform: translateY(-3px);
-    }
-
-    @media (max-width: 768px) {
-      h1 { font-size: 2.5rem; }
-      .tagline { font-size: 1.3rem; }
-      .description { font-size: 0.95rem; }
-      .buttons { gap: 12px; }
-      .btn { padding: 12px 24px; font-size: 0.9rem; }
-    }
+    .btn:hover { transform: scale(1.05); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
   `]
 })
 export class HomeComponent {
