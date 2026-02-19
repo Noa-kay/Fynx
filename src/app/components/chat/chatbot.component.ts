@@ -84,6 +84,8 @@ export class ChatBotComponent implements OnInit, OnDestroy {
   recordingDurationSeconds: WritableSignal<number> = signal(0);
   private speechRecognition?: any;
   private recordingIntervalId?: ReturnType<typeof setInterval>;
+  private baseTextBeforeRecording: string = '';
+  private finalizedTranscript: string = '';
 
   isVoiceRecordingSupported = computed(() => {
     const win = window as any;
@@ -194,25 +196,29 @@ export class ChatBotComponent implements OnInit, OnDestroy {
     this.speechRecognition.lang = 'he-IL';
     this.speechRecognition.continuous = true;
     this.speechRecognition.interimResults = true;
+    this.baseTextBeforeRecording = this.text.trim();
+    this.finalizedTranscript = '';
 
     this.speechRecognition.onresult = (event: any) => {
-      let finalTranscript = '';
+      let newlyFinalTranscript = '';
       let interimTranscript = '';
 
       for (let index = event.resultIndex; index < event.results.length; index++) {
         const transcriptPart = event.results[index][0]?.transcript ?? '';
         if (event.results[index].isFinal) {
-          finalTranscript += transcriptPart;
+          newlyFinalTranscript += transcriptPart;
         } else {
           interimTranscript += transcriptPart;
         }
       }
 
-      const currentText = this.text.trim();
-      const finalText = finalTranscript.trim();
-      if (finalText) {
-        this.text = currentText ? `${currentText} ${finalText}` : finalText;
+      const finalTextChunk = newlyFinalTranscript.trim();
+      if (finalTextChunk) {
+        this.finalizedTranscript = [this.finalizedTranscript, finalTextChunk].filter(Boolean).join(' ').trim();
       }
+
+      const visibleTranscript = [this.finalizedTranscript, interimTranscript.trim()].filter(Boolean).join(' ').trim();
+      this.text = [this.baseTextBeforeRecording, visibleTranscript].filter(Boolean).join(' ').trim();
 
       this.recordingStatus.set(interimTranscript.trim()
         ? `Listening: ${interimTranscript.trim()}`
@@ -230,6 +236,8 @@ export class ChatBotComponent implements OnInit, OnDestroy {
       this.clearRecordingTimer();
       this.recordingDurationSeconds.set(0);
       this.isRecording.set(false);
+      this.baseTextBeforeRecording = '';
+      this.finalizedTranscript = '';
       this.recordingStatus.set('Voice typing complete. You can edit and send the text.');
       this.speechRecognition = undefined;
     };
