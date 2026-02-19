@@ -37,38 +37,19 @@ export class CategoriesComponent implements OnInit {
   
 
   private router = inject(Router);
-  private authService = inject(AuthService);
+  public authService = inject(AuthService);
   private apiService = inject(ApiService);
   
   isAvatarMenuOpen = signal<boolean>(false); 
-  userAvatar: string = '';
 
   ngOnInit(): void {
-    this.loadUserAvatar();
     this.loadCategories();
   }
+  
+    user() {
+      return this.authService.getCurrentUserData();
+    }
 
-  loadUserAvatar() {
-    const userData: UserDTO | null = this.authService.getCurrentUserData();
-    
-    if (userData) {
-        const cleanPath = userData.userAvatarUrl || userData.avatarUrl; 
-        let finalAvatarUrl: string;
-        
-        if (cleanPath && typeof cleanPath === 'string' && !cleanPath.startsWith('http')) {
-            finalAvatarUrl = `http://localhost:8080/api/files/${cleanPath}`;
-        } else if (cleanPath) {
-            finalAvatarUrl = cleanPath;
-        } else {
-            const initial = userData.username?.charAt(0).toUpperCase() || 'U';
-            finalAvatarUrl = `https://placehold.co/50x50/8e44ad/ffffff?text=${initial}`;
-        }
-        
-        this.userAvatar = finalAvatarUrl;
-    } else {
-        this.userAvatar = 'https://placehold.co/50x50/8e44ad/ffffff?text=U';
-    }
-}
 
   loadCategories(): void {
     this.apiService.getCategories().subscribe({

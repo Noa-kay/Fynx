@@ -44,7 +44,7 @@ export class FeedComponent implements OnInit {
     sortMode = signal<'top' | 'likes' | 'comments' | 'new'>('top');
     
     private router = inject(Router);
-    private authService = inject(AuthService);
+    public authService = inject(AuthService);
     private apiService = inject(ApiService);
     private sanitizer = inject(DomSanitizer);
     
@@ -71,24 +71,6 @@ export class FeedComponent implements OnInit {
         return false;
     }
 
-    userHeaderAvatarUrl = computed<string | SafeUrl>(() => {
-        const user = this.authService.currentUser();
-        
-        const avatarPathOrPlaceholder = user && typeof user === 'object' && 'avatarUrl' in user 
-            ? (user as any).avatarUrl 
-            : null;
-
-        if (!avatarPathOrPlaceholder) {
-            return 'https://placehold.co/50x50/ff9933/ffffff?text=U';
-        }
-
-        if (avatarPathOrPlaceholder.startsWith('https://')) {
-            return avatarPathOrPlaceholder; 
-        }
-        
-        const rawUrl = this.getMediaUrl(avatarPathOrPlaceholder);
-        return this.sanitizer.bypassSecurityTrustResourceUrl(rawUrl);
-    });
 
     getSafeMediaUrl(fileName: string | undefined): SafeUrl | string {
         if (!fileName) {
@@ -238,5 +220,9 @@ export class FeedComponent implements OnInit {
         this.authService.logout();
         this.isAvatarMenuOpen.set(false);
         this.router.navigate(['/sign-in']);
+    }
+
+    user() {
+        return this.authService.currentUser();
     }
 }

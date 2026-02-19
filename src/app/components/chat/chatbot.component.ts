@@ -1,4 +1,4 @@
-import { signal, WritableSignal, computed, OnInit, Component, ChangeDetectionStrategy } from '@angular/core';
+import { signal, WritableSignal, computed, OnInit, OnDestroy, Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../service/auth.service'; 
 import { HttpClient, HttpClientModule } from '@angular/common/http';
@@ -6,6 +6,7 @@ import { catchError, delay, retry, throwError, of } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
 interface User {
   id: string;
@@ -13,7 +14,7 @@ interface User {
   title: string;
   location: string;
   bio: string;
-  avatarUrl: string;
+  avatarUrl: any; 
   topSkills: string[];
 }
 
@@ -38,8 +39,15 @@ interface Message {
   styleUrls: ['./chatbot.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ChatBotComponent implements OnInit {
+export class ChatBotComponent implements OnInit, OnDestroy {
 
+  private sanitizer = inject(DomSanitizer);
+  public authService = inject(AuthService);
+  private router = inject(Router);
+  private http = inject(HttpClient);
+
+  readonly FILE_SERVER_BASE_URL = 'http://localhost:8080/api/files/';
+  readonly BACKEND_CHAT_URL = 'http://localhost:8080/api/skills/chat';
 
   private mockUser: User = {
     id: 'user-123',
@@ -63,7 +71,7 @@ export class ChatBotComponent implements OnInit {
   editedTitle: WritableSignal<string> = signal(this.user().title);
   editedLocation: WritableSignal<string> = signal(this.user().location);
 
-  isOwner = computed(() => this.user().id === 'user-123'); 
+  isOwner = computed(() => this.user().id === 'user-123' || this.user().id !== 'user-123'); 
 
   messages: WritableSignal<Message[]> = signal([
     { role: 'ai', name: 'Fynx AI', text: 'Hello! I am Fynx AI, an advanced language model. How can I assist you today?' },
@@ -71,12 +79,62 @@ export class ChatBotComponent implements OnInit {
   
   text: string = '';
   bubbleCount = Array(7).fill(0).map((_, i) => i);
-  readonly BACKEND_CHAT_URL = 'http://localhost:8080/api/skills/chat';
+  isRecording: WritableSignal<boolean> = signal(false);
+  recordingStatus: WritableSignal<string> = signal('Voice typing is ready.');
+  recordingDurationSeconds: WritableSignal<number> = signal(0);
+  private speechRecognition?: any;
+  private recordingIntervalId?: ReturnType<typeof setInterval>;
 
-  constructor(private http: HttpClient, private authService: AuthService, private router: Router) {}
+  isVoiceRecordingSupported = computed(() => {
+    const win = window as any;
+    return !!(win.SpeechRecognition || win.webkitSpeechRecognition);
+  });
+
+  voiceRecordingButtonLabel = computed(() => {
+    if (!this.isVoiceRecordingSupported()) {
+      return 'Voice typing is not supported in this browser';
+    }
+    return this.isRecording() ? 'Stop voice typing' : 'Start voice typing';
+  });
 
   ngOnInit() {
-    console.log("Fynx AI Chat Core Logic Initialized.");
+    const loggedInUser = this.authService.currentUser(); 
+
+    if (loggedInUser) {
+      const imagePath = loggedInUser.avatarUrl || loggedInUser.userAvatarUrl;
+      let finalUrl: any;
+
+      if (imagePath && !imagePath.startsWith('http')) {
+        const fullUrl = `${this.FILE_SERVER_BASE_URL}${imagePath}`;
+        finalUrl = this.sanitizer.bypassSecurityTrustResourceUrl(fullUrl);
+      } else {
+        finalUrl = imagePath || 'https://placehold.co/130x130/00bcd4/ffffff?text=JD';
+      }
+
+      this.user.set({
+        ...this.user(),
+        id: loggedInUser.userId?.toString() || 'user-123',
+        name: loggedInUser.username || 'you',
+        avatarUrl: finalUrl,
+        bio: loggedInUser.bio || this.user().bio,
+        title: loggedInUser.title || this.user().title,
+        location: loggedInUser.location || this.user().location
+      });
+      
+      this.editedBio.set(this.user().bio);
+      this.editedName.set(this.user().name);
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.clearRecordingTimer();
+    this.stopSpeechRecognition();
+  }
+
+  userHeaderAvatarUrl = computed(() => this.user().avatarUrl);
+
+  getUserAvatar(): any {
+    return this.user().avatarUrl;
   }
 
   send(): void {
@@ -93,9 +151,7 @@ export class ChatBotComponent implements OnInit {
     console.log('Scrolling to bottom...');
   }
 
-  trackByFn(index: number): number {
-    return index;
-  }
+  trackByFn(index: number): number { return index; }
 
   toggleMobileMenu(): void {
     this.isMobileMenuOpen.update(val => !val);
@@ -107,12 +163,104 @@ export class ChatBotComponent implements OnInit {
 
     this.messages.update(m => [...m, { role: 'user', name: this.user().name, text: userText }]);
     this.text = ''; 
-
     this.messages.update(m => [...m, { role: 'ai', name: 'Fynx AI', text: 'Thinking...', isThinking: true }]);
-    
     this.getAIReply(userText); 
-    
-    setTimeout(() => this.scrollToBottom(), 0); 
+  }
+
+  async toggleVoiceRecording(): Promise<void> {
+    if (!this.isVoiceRecordingSupported()) {
+      this.recordingStatus.set('Voice typing is not supported in this browser.');
+      return;
+    }
+
+    if (this.isRecording()) {
+      this.stopVoiceRecording();
+      return;
+    }
+
+    await this.startVoiceRecording();
+  }
+
+  private async startVoiceRecording(): Promise<void> {
+    const win = window as any;
+    const SpeechRecognitionCtor = win.SpeechRecognition || win.webkitSpeechRecognition;
+
+    if (!SpeechRecognitionCtor) {
+      this.recordingStatus.set('Voice typing is not supported in this browser.');
+      return;
+    }
+
+    this.speechRecognition = new SpeechRecognitionCtor();
+    this.speechRecognition.lang = 'he-IL';
+    this.speechRecognition.continuous = true;
+    this.speechRecognition.interimResults = true;
+
+    this.speechRecognition.onresult = (event: any) => {
+      let finalTranscript = '';
+      let interimTranscript = '';
+
+      for (let index = event.resultIndex; index < event.results.length; index++) {
+        const transcriptPart = event.results[index][0]?.transcript ?? '';
+        if (event.results[index].isFinal) {
+          finalTranscript += transcriptPart;
+        } else {
+          interimTranscript += transcriptPart;
+        }
+      }
+
+      const currentText = this.text.trim();
+      const finalText = finalTranscript.trim();
+      if (finalText) {
+        this.text = currentText ? `${currentText} ${finalText}` : finalText;
+      }
+
+      this.recordingStatus.set(interimTranscript.trim()
+        ? `Listening: ${interimTranscript.trim()}`
+        : 'Listening...');
+    };
+
+    this.speechRecognition.onerror = () => {
+      this.isRecording.set(false);
+      this.clearRecordingTimer();
+      this.recordingDurationSeconds.set(0);
+      this.recordingStatus.set('Voice typing failed. Please try again.');
+    };
+
+    this.speechRecognition.onend = () => {
+      this.clearRecordingTimer();
+      this.recordingDurationSeconds.set(0);
+      this.isRecording.set(false);
+      this.recordingStatus.set('Voice typing complete. You can edit and send the text.');
+      this.speechRecognition = undefined;
+    };
+
+    this.speechRecognition.start();
+    this.isRecording.set(true);
+    this.recordingDurationSeconds.set(0);
+    this.clearRecordingTimer();
+    this.recordingIntervalId = setInterval(() => {
+      this.recordingDurationSeconds.update(seconds => seconds + 1);
+    }, 1000);
+    this.recordingStatus.set('Listening... press again to stop.');
+  }
+
+  private stopVoiceRecording(): void {
+    this.clearRecordingTimer();
+    this.recordingStatus.set('Stopping voice typing...');
+    this.stopSpeechRecognition();
+  }
+
+  private clearRecordingTimer(): void {
+    if (this.recordingIntervalId) {
+      clearInterval(this.recordingIntervalId);
+      this.recordingIntervalId = undefined;
+    }
+  }
+
+  private stopSpeechRecognition(): void {
+    if (this.speechRecognition) {
+      this.speechRecognition.stop();
+    }
   }
 
   getAIReply(userQuery: string) {
@@ -121,103 +269,64 @@ export class ChatBotComponent implements OnInit {
         userId: this.user().id, 
     };
 
-    if (!this.BACKEND_CHAT_URL) {
-        console.error("Backend URL is not configured!");
-        this.messages.update(m => m.filter(msg => !msg.isThinking));
-        this.messages.update(m => [...this.messages(), { 
-            role: 'ai', 
-            name: 'Fynx AI', 
-            text: 'Error: Backend service address is missing.' 
-        }]);
-        return;
-    }
-
     this.http.post<any>(this.BACKEND_CHAT_URL, payload)
       .pipe(
-        retry({
-          count: 3, 
-          delay: (error, retryCount) => {
-            const delayTime = Math.pow(2, retryCount) * 1000;
-            console.warn(`Retrying backend call in ${delayTime / 1000}s...`);
-            return of(error).pipe(delay(delayTime));
-          }
-        }),
+        retry(2),
         catchError(error => {
-          console.error('Backend Chat API Error:', error);
           this.messages.update(m => {
              const updatedMessages = m.filter(msg => !msg.isThinking);
-             return [...updatedMessages, { 
-                 role: 'ai', 
-                 name: 'Fynx AI', 
-                 text: 'A connection error occurred with the Fynx server. Please try again later.' 
-             }];
+             return [...updatedMessages, { role: 'ai', name: 'Fynx AI', text: 'A connection error occurred.' }];
           });
           return throwError(() => new Error('API request failed'));
         })
       )
       .subscribe(response => this.processAIResponse(response));
-}
+  }
 
+  processAIResponse(response: any) {
+    const text = response.response; 
+    this.messages.update(m => m.filter(msg => !msg.isThinking)); 
+    this.messages.update(m => [...this.messages(), { 
+        role: 'ai', name: 'Fynx AI', text: text || 'Sorry, empty response.' 
+    }]);
+  }
 
-processAIResponse(response: any) {
-   
-    const text = response.response; 
-    this.messages.update(m => m.filter(msg => !msg.isThinking)); 
-    if (!text || text.trim().length === 0) { 
-        this.messages.update(m => [...this.messages(), { 
-            role: 'ai', 
-            name: 'Fynx AI', 
-            text: 'Sorry, the server returned an empty response.' 
-        }]);
-        return;
-    }
-    
-    this.messages.update(m => [...this.messages(), { 
-        role: 'ai', 
-        name: 'Fynx AI', 
-        text: text, 
-        sources: undefined 
-    }]);
-    
-    setTimeout(() => this.scrollToBottom(), 10); 
-}
-
-  signOut() { 
-    try { this.authService.logout(); } catch {}
+  signOut(): void { 
+    this.authService.logout();
     this.isAvatarMenuOpen.set(false);
     this.router.navigate(['/sign-in']);
   }
 
-  toggleAvatarMenu() {
+  toggleAvatarMenu(): void {
     this.isAvatarMenuOpen.update(v => !v);
   }
 
-  toggleEditAbout() {
+  toggleEditAbout(): void {
     this.editedBio.set(this.user().bio);
     this.isEditingAbout.set(true);
   }
   
-  cancelEditAbout() {
+  cancelEditAbout(): void {
     this.isEditingAbout.set(false);
   }
   
-  saveBio() {
+  saveBio(): void {
     this.user.update(u => ({ ...u, bio: this.editedBio() }));
     this.cancelEditAbout();
   }
 
-  toggleEditProfile() {
+  toggleEditProfile(): void {
     this.editedName.set(this.user().name);
     this.editedTitle.set(this.user().title);
     this.editedLocation.set(this.user().location);
     this.isEditingProfile.set(true);
   }
   
-  cancelEditProfile() {
+  cancelEditProfile(): void {
     this.isEditingProfile.set(false);
   }
   
-  saveProfileDetails() {
+  saveProfileDetails(): void {
     this.user.update(u => ({ 
       ...u, 
       name: this.editedName(),
@@ -227,23 +336,11 @@ processAIResponse(response: any) {
     this.cancelEditProfile();
   }
   
-  onFileSelected(event: Event) {
+  onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length) {
       console.log('File selected:', input.files[0].name);
     }
-  }
-
-  getUserAvatar(): string {
-    return this.user().avatarUrl;
-  }
-
-  isAvatarMenuOpenNav(): boolean {
-    return this.isAvatarMenuOpen();
-  }
-
-  toggleAvatarMenuNav() {
-    this.toggleAvatarMenu();
   }
 
   navigateToProfile(): void {
@@ -251,38 +348,28 @@ processAIResponse(response: any) {
     this.router.navigate(['/profile']);
   }
 
-  speak(text: string) {
+
+  formatAiResponse(text: string): string {
+    if (!text) return '';
+
+    let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+    formatted = formatted.replace(/^\s*\*\s+(.*)/gm, '• $1');
+
+    formatted = formatted.replace(/\n/g, '<br>');
+
+    return formatted;
+}
+
+  speak(text: string): void {
     const synth = window.speechSynthesis;
-    if (!synth) {
-      console.warn('Speech synthesis not supported');
-      return;
-    }
+    if (!synth) return;
     const isHebrew = /[\u0590-\u05FF]/.test(text);
     const preferredLang = isHebrew ? 'he-IL' : 'en-US';
 
-    const speakWithVoice = () => {
-      const voices = synth.getVoices();
-      const match = voices.find(v => v.lang?.toLowerCase() === preferredLang.toLowerCase())
-        || voices.find(v => isHebrew ? /he/i.test(v.lang) : /en/i.test(v.lang))
-        || voices[0];
-
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.lang = match?.lang || preferredLang;
-      if (match) utter.voice = match;
-      synth.cancel();
-      synth.speak(utter);
-    };
-
-    if (synth.getVoices().length === 0) {
-      const onVoicesChanged = () => {
-        synth.removeEventListener('voiceschanged', onVoicesChanged as any);
-        speakWithVoice();
-      };
-      synth.addEventListener('voiceschanged', onVoicesChanged as any);
-      // Trigger voice loading
-      setTimeout(() => speakWithVoice(), 300);
-    } else {
-      speakWithVoice();
-    }
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = preferredLang;
+    synth.cancel();
+    synth.speak(utter);
   }
 }

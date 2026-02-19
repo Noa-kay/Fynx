@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+
 const getCookie = (name: string): string | null => {
   const nameEQ = name + "=";
   const ca = document.cookie.split(';');
@@ -17,7 +18,7 @@ const getCookie = (name: string): string | null => {
 export class AuthInterceptorService implements HttpInterceptor {
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    const token = getCookie('log_in_token');
+    const token = getCookie('fynx_token');
     
     if (token) {
       const authReq = req.clone({

@@ -60,7 +60,7 @@ export class ProfileComponent implements OnInit {
 
   
   private router = inject(Router);
-  private authService = inject(AuthService);
+  public authService = inject(AuthService);
   private userService = inject(UserService); 
   private _isOwner = signal<boolean>(true); 
   
@@ -73,54 +73,52 @@ export class ProfileComponent implements OnInit {
   editedName: string = '';
   editedTitle: string = '';
   editedLocation: string = '';
+
+errorMessage = signal<string | null>(null);
+isSubmitted = signal<boolean>(false);
   
-  ngOnInit() {
-    this.loadUserProfile();
-    this.editedBio = this.user().bio;
-    this.editedName = this.user().name;
-    this.editedTitle = this.user().title;
-    this.editedLocation = this.user().location;
-    this.randomFact = this.funFacts[Math.floor(Math.random() * this.funFacts.length)];
+
+
+ngOnInit() {
+  const userData = this.authService.currentUser();
+  
+  if (userData && userData.userId) {
+    this.userService.getCurrentUserProfile(userData.userId).subscribe({
+      next: (fullUser) => {
+        this.authService.updateCurrentUser(fullUser);
+        this.updateUIFromUserDto(fullUser);
+      }
+    });
+  }
+  const loggedInUser = this.authService.currentUser();
+
+  if (loggedInUser) {
+    this.updateUIFromUserDto(loggedInUser);
+    this.editedBio = loggedInUser.bio || this.user().bio;
+    this.editedName = loggedInUser.username || this.user().name;
+    this.editedTitle = loggedInUser.title || this.user().title;
+    this.editedLocation = loggedInUser.location || this.user().location;
+    this.randomFact = this.funFacts[Math.floor(Math.random() * this.funFacts.length)];
     this.randomQuote = this.quotes[Math.floor(Math.random() * this.quotes.length)];
-  }
-
-
-loadUserProfile() {
-    const userData: UserDTO | null = this.authService.currentUser();
-    
-    console.log('Auth user data:', userData);
-    
-    if (userData && userData.userId) {
-        this.userService.getCurrentUserProfile(userData.userId).subscribe({
-            next: (fullUserDto: UserDTO) => {
-                this.authService.updateCurrentUser(fullUserDto); 
-                this.updateUIFromUserDto(fullUserDto);
-            },
-            error: (err) => {
-                if (err.status !== 401) {
-                    this.updateUIFromUserDto(userData); 
-                }
-            }
-        });
-        
-    } else {
-        console.log('No user logged in, using demo profile data');
-        this.user.set(INITIAL_USER_DATA); 
-    }
+  }
 }
+
 
 private updateUIFromUserDto(userData: UserDTO) {
     const cleanPath = userData.userAvatarUrl || userData.avatarUrl; 
-    let finalAvatarUrl = INITIAL_USER_DATA.avatarUrl; 
     
-    if (cleanPath && typeof cleanPath === 'string') {
-        if (!cleanPath.startsWith('http') && cleanPath.includes('.')) {
+    let finalAvatarUrl = INITIAL_USER_DATA.avatarUrl;
+    
+    if (cleanPath && typeof cleanPath === 'string' && cleanPath !== 'null') {
+        if (!cleanPath.startsWith('http')) {
             finalAvatarUrl = `http://localhost:8080/api/files/${cleanPath}`;
         } else {
             finalAvatarUrl = cleanPath;
         }
     }
+
     this.user.set({
+        ...this.user(),
         name: userData.username || 'User',
         title: userData.title || 'No Title Set',
         location: userData.location || 'Unknown Location',
@@ -179,7 +177,8 @@ onFileSelected(event: Event): void {
             };
             
             this.authService.updateCurrentUser(updatedDto); 
-            this.loadUserProfile(); 
+
+            this.updateUIFromUserDto(updatedDto);
             
             console.log('Avatar successfully uploaded, DTO merged and saved.');
             alert('Profile picture updated successfully!');
@@ -208,6 +207,13 @@ onFileSelected(event: Event): void {
 
   saveProfileDetails(): void {
   const currentUser = this.authService.currentUser();
+  this.isSubmitted.set(true);
+
+  if (!this.editedName || this.editedName.trim().length < 2) {
+    this.errorMessage.set("Name must be at least 2 characters long.");
+    return;
+  }
+
   if (this.isOwner() && currentUser?.userId) {
     const updatedData = {
       username: this.editedName,
@@ -243,6 +249,7 @@ onFileSelected(event: Event): void {
       this.editedTitle = this.user().title;
       this.editedLocation = this.user().location;
       this.isEditingProfile.set(false);
+      this.isSubmitted.set(false);
   }
 
   toggleEditAbout(): void {

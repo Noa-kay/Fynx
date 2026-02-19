@@ -11,7 +11,7 @@
 
     <header class="app-header">
         <div class="app-header-inner">
-            <div class="logo"><img src="assets/images/Logo.png" alt="Fynx Logo"></div>
+            <div class="logo" style="margin-right: 32px;"><img src="assets/images/Logo.png" alt="Fynx Logo"></div>
             <nav>
                 <a routerLink="/feed" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
@@ -26,28 +26,24 @@
                      AI Chat
                 </a>
             </nav>
-            
             <div class="avatar-dropdown-wrapper">
                 <div class="user-avatar-small-container sweezy-custom-cursor-hover" (click)="toggleAvatarMenu()">
-                    <img [src]="userAvatar" alt="User" class="user-avatar-small">
+                    <img [src]="authService.getFullAvatarUrl()" alt="User" class="user-avatar-small">
                 </div>
-
                 <div class="avatar-dropdown-menu" *ngIf="isAvatarMenuOpen">
-                    <a class="menu-item profile-link-btn" (click)="navigateToProfile()">
-                        View profile
+                    <a class="menu-item profile-link-btn" routerLink="/profile" (click)="isAvatarMenuOpen = false">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.935 13.935 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Profile
                     </a>
-
                     <div class="menu-divider"></div>
-
                     <button class="menu-item sign-out-btn" (click)="signOut()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H7a3 3 0 01-3-3V7a3 3 0 013-3h3a3 3 0 013 3v1"/></svg>
                         Sign Out
                     </button>
                 </div>
             </div>
-            
         </div>
     </header>
-
     <div class="menu-overlay" *ngIf="isAvatarMenuOpen" (click)="toggleAvatarMenu()"></div>
 
     <div class="content-wrapper">
@@ -172,61 +168,61 @@
                                 placeholder="Add a comment" 
                                 (keyup.enter)="addComment(p)"
                             />
-                            <button (click)="addComment(p)" [disabled]="!newCommentsInput[p.skillId]?.trim()">Send</button>
+                            <button (click)="addComment(p)" [disabled]="!newCommentsInput[p.skillId].trim()">Send</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <aside class="create-post-sidebar">
-            <div class="form-card">
-                <h3>{{ isEditMode ? '✏️ Edit Post' : '✨ Create Post' }}</h3>
-                
-                <form (ngSubmit)="submitPost()">
+        <aside class="create-post-sidebar improved-layout">
+            <div class="form-card modern-form">
+                <h3 class="form-title">{{ isEditMode ? '✏️ Edit Post' : '✨ Create Post' }}</h3>
+                <form (ngSubmit)="submitPost()" class="form-content">
                     <div class="form-group">
-                        <label>Title</label>
+                        <label for="title" class="form-label">Title</label>
                         <input 
                             type="text" 
                             [(ngModel)]="postTitle" 
                             name="title"
+                            id="title"
+                            class="form-input"
                             placeholder="What's on your mind?"
                             required
                         />
                     </div>
-
                     <div class="form-group">
-                        <label>Description</label>
+                        <label for="body" class="form-label">Description</label>
                         <textarea 
                             [(ngModel)]="postBody" 
                             name="body"
+                            id="body"
+                            class="form-textarea"
                             placeholder="Share your thoughts..."
                             rows="4"
                         ></textarea>
                     </div>
-
                     <div class="form-group">
-                        <label>Media (Image / Video / Audio)</label>
+                        <label for="file-input" class="form-label">Media (Image / Video / Audio)</label>
                         <div class="file-input-wrapper">
                             <input 
                                 type="file" 
                                 (change)="onFileSelected($event)" 
                                 accept="image/*,video/*,audio/*"
                                 id="file-input"
+                                class="form-file-input"
                             />
                             <label for="file-input" class="file-label">
                                 📎 Choose File
                             </label>
                         </div>
                     </div>
-
                     <div class="media-preview" *ngIf="previewUrl">
                         <p class="preview-label">Preview:</p>
-                        <img *ngIf="previewType?.startsWith('image')" [src]="previewUrl" alt="Preview" />
-                        <video *ngIf="previewType?.startsWith('video')" [src]="previewUrl" controls></video>
-                        <audio *ngIf="previewType?.startsWith('audio')" [src]="previewUrl" controls></audio>
+                        <img *ngIf="previewType?.startsWith('image')" [src]="previewUrl" alt="Preview" class="preview-image" />
+                        <video *ngIf="previewType?.startsWith('video')" [src]="previewUrl" controls class="preview-video"></video>
+                        <audio *ngIf="previewType?.startsWith('audio')" [src]="previewUrl" controls class="preview-audio"></audio>
                     </div>
-
                     <div class="form-actions">
                         <button type="button" class="btn-clear" (click)="isEditMode ? cancelEdit() : clearForm()">
                             {{ isEditMode ? 'Cancel' : 'Clear' }}

@@ -19,8 +19,7 @@ export class CategoryPostsComponent implements OnInit {
   categoryName: string = '';
   posts: any[] = [];
   private allCategories: any[] = [];
-  
-  userAvatar: string = '';
+ 
   isAvatarMenuOpen = false;
 
   postTitle = '';
@@ -48,39 +47,17 @@ export class CategoryPostsComponent implements OnInit {
 
   ngOnInit() {
     this.categoryId = this.route.snapshot.paramMap.get('id');
-    this.loadUserAvatar();
     this.loadPosts();
     this.loadAllCategories();
   }
+  
+    user() {
+        return this.authService.getCurrentUserData();
+    }
 
   togglePortrait() {
     this.portraitMode = !this.portraitMode;
   }
-
-
-loadUserAvatar() {
-    const userData: UserDTO | null = this.authService.getCurrentUserData();
-    
-    if (userData) {
-        const cleanPath = userData.userAvatarUrl || userData.avatarUrl; 
-        let finalAvatarUrl: string;
-        
-        if (cleanPath && typeof cleanPath === 'string' && !cleanPath.startsWith('http')) {
-            finalAvatarUrl = `http://localhost:8080/api/files/${cleanPath}`;
-        } else if (cleanPath) {
-            finalAvatarUrl = cleanPath;
-        } else {
-            const initial = userData.username?.charAt(0).toUpperCase() || 'U';
-            finalAvatarUrl = `https://placehold.co/40x40/8e44ad/ffffff?text=${initial}`;
-        }
-        
-        this.userAvatar = finalAvatarUrl;
-        console.log('Header Avatar URL set to:', this.userAvatar);
-    } else {
-        this.userAvatar = 'https://placehold.co/40x40/8e44ad/ffffff?text=U';
-    }
-}
-
 
 loadAllCategories() {
     this.api.getCategories().subscribe({ 

@@ -28,41 +28,26 @@ export class AuthService {
 private loadUserFromStorage() {
     try {
         const userData = localStorage.getItem('fynx_user');
-        
         if (userData) {
-            console.log('RAW JSON from localStorage:', userData); 
-            
             let loadedUser: UserDTO = JSON.parse(userData) as UserDTO;
-            if (loadedUser && loadedUser.username && !loadedUser.userAvatarUrl && !loadedUser.avatarUrl) {
-                const defaultAvatarUrl = ('https://placehold.co/130x130/8e44ad/ffffff?text=' + loadedUser.username.charAt(0).toUpperCase());
-                this.currentUserData = {
-                    ...loadedUser,
-                    userAvatarUrl: null, 
-                    avatarUrl: defaultAvatarUrl 
-                };
-                
-                
-            } else if (loadedUser && loadedUser.username) {
-                const cleanPath = loadedUser.userAvatarUrl || loadedUser.avatarUrl; 
-                const defaultAvatarUrl = ('https://placehold.co/130x130/8e44ad/ffffff?text=' + loadedUser.username.charAt(0).toUpperCase());
-                
-                this.currentUserData = {
-                    ...loadedUser,
-                    userAvatarUrl: cleanPath || null, 
-                    avatarUrl: cleanPath ? cleanPath : defaultAvatarUrl 
-                };
-            } else {
-                this.currentUserData = null;
-            }
             
+            if (loadedUser && loadedUser.username) {
+                // התיקון הקריטי: אנחנו שומרים על userAvatarUrl המקורי מה-DB!
+                // ורק אם הוא באמת ריק, אנחנו מייצרים Placeholder
+                const realPath = loadedUser.userAvatarUrl; 
+                const defaultAvatarUrl = `https://placehold.co/130x130/8e44ad/ffffff?text=${loadedUser.username.charAt(0).toUpperCase()}`;
+
+                this.currentUserData = {
+                    ...loadedUser,
+                    userAvatarUrl: realPath || null, 
+                    // אם יש נתיב אמיתי, נשתמש בו. אם לא, נשתמש ב-Placeholder
+                    avatarUrl: (realPath && realPath !== 'null') ? realPath : defaultAvatarUrl 
+                };
+            }
             console.log('Loaded user from storage (Revalidated):', this.currentUserData);
-        } else {
-            this.currentUserData = null;
         }
     } catch (e) {
-        console.error('Error loading user from storage (Data corrupted/incomplete):', e);
-        localStorage.removeItem('fynx_user'); 
-        this.currentUserData = null;
+        console.error('Error loading user from storage:', e);
     }
 }
 
@@ -72,15 +57,9 @@ updateCurrentUser(user: UserDTO): void {
 
 
 private setAndSaveUser(response: UserDTO): void {
-    const cleanPath = response.userAvatarUrl || response.avatarUrl; 
-    const defaultAvatarUrl = response.username ? 
-        ('https://placehold.co/130x130/8e44ad/ffffff?text=' + response.username.charAt(0).toUpperCase()) : 
-        'https://placehold.co/130x130/8e44ad/ffffff?text=U';
-        
+    // אנחנו שומרים על המבנה המקורי מהשרת בלי "לנקות" נתיבים מראש
     this.currentUserData = { 
-        ...response,
-        userAvatarUrl: cleanPath || null, 
-        avatarUrl: cleanPath || defaultAvatarUrl 
+        ...response
     };
     
     try {
@@ -147,4 +126,30 @@ currentUser(): UserDTO | null {
     }
     this.currentUserData = null;
   }
+
+getFullAvatarUrl(): string {
+    const user = this.currentUserData;
+    if (!user) return 'https://placehold.co/130x130/ff9933/ffffff?text=U';
+
+    // 1. בדיקה אם יש לנו שם קובץ אמיתי מה-DB
+    const hasRealFile = user.userAvatarUrl && 
+                        user.userAvatarUrl !== 'null' && 
+                        user.userAvatarUrl !== '';
+
+    if (hasRealFile) {
+        // אם זה שם קובץ (כמו image.jpg), נוסיף לו את כתובת השרת
+        if (!user.userAvatarUrl!.startsWith('http')) {
+            return `http://localhost:8080/api/files/${user.userAvatarUrl}`;
+        }
+        // אם זה כבר נתיב מלא (מגוגל למשל), נחזיר אותו
+        return user.userAvatarUrl!;
+    }
+
+    // 2. אם אין קובץ אמיתי, ניצור פלייסהולדר לפי האות הראשונה של השם
+    const initial = user.username?.charAt(0).toUpperCase() || 'U';
+    return `https://placehold.co/130x130/8e44ad/ffffff?text=${initial}`;
+}
+
+
+
 }

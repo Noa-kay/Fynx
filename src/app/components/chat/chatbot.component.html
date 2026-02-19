@@ -28,23 +28,28 @@
     </nav>
     
     <div class="avatar-dropdown-wrapper">
-      <div class="user-avatar-small-container sweezy-custom-cursor-hover" (click)="toggleAvatarMenu()">
-       <img alt="User" class="user-avatar-small" [src]="getUserAvatar()" >
-      </div>
-      <div class="avatar-dropdown-menu" *ngIf="isAvatarMenuOpen()">
-        <a class="menu-item profile-link-btn" routerLink="/profile" (click)="isAvatarMenuOpen.set(false)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.935 13.935 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          View Profile
-        </a>
-        <div class="menu-divider"></div>
-        <button class="menu-item sign-out-btn" (click)="signOut()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H7a3 3 0 01-3-3V7a3 3 0 013-3h3a3 3 0 013 3v1"/></svg>
-          Sign Out
-        </button>
-      </div>
-    </div>
-    
-  </header>
+            
+            <div class="user-avatar-small-container sweezy-custom-cursor-hover" (click)="toggleAvatarMenu()">
+                <img [src]="authService.getFullAvatarUrl()" alt="User" class="user-avatar-small">
+            </div>
+
+            <div class="avatar-dropdown-menu" *ngIf="isAvatarMenuOpen()">
+                
+              <a class="menu-item profile-link-btn" routerLink="/profile" (click)="isAvatarMenuOpen.set(false)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.935 13.935 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Profile
+                </a>
+
+                <div class="menu-divider"></div>
+
+                <button class="menu-item sign-out-btn" (click)="signOut()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H7a3 3 0 01-3-3V7a3 3 0 013-3h3a3 3 0 013 3v1"/></svg>
+                    Sign Out
+                </button>
+            </div>
+        </div>
+        
+    </header>
 
   <div class="menu-overlay" *ngIf="isAvatarMenuOpen()" (click)="toggleAvatarMenu()"></div>
 
@@ -54,11 +59,12 @@
       
       <div class="messages">
         <div *ngFor="let m of messages(); trackBy: trackByFn" [ngClass]="m.role">
-          <div class="message-bubble">
-            <strong *ngIf="m.role === 'ai'">AI:</strong>
-            <span>{{ m.text }}</span>
-            <button *ngIf="m.role === 'ai'" class="tts-btn" type="button" (click)="speak(m.text)" title="Read aloud">🔊</button>
-          </div>
+         <div class="message-bubble">
+           <strong *ngIf="m.role === 'ai'">AI:</strong>
+           <span [innerHTML]="formatAiResponse(m.text)"></span>
+  
+           <button *ngIf="m.role === 'ai'" class="tts-btn" type="button" (click)="speak(m.text)" title="Read aloud">🔊</button>
+        </div>
         </div>
         <div *ngIf="isLoading()" class="ai thinking">
           <div class="message-bubble">
@@ -70,7 +76,23 @@
       </div>
       
       <form (ngSubmit)="send()" class="input-area">
-        <input [(ngModel)]="text" name="text" placeholder="Ask the AI..." [disabled]="isLoading()" required>
+        <div class="voice-controls">
+          <button
+            type="button"
+            class="record-btn"
+            [class.recording]="isRecording()"
+            [disabled]="isLoading() || !isVoiceRecordingSupported()"
+            [attr.aria-label]="voiceRecordingButtonLabel()"
+            [attr.aria-pressed]="isRecording()"
+            (click)="toggleVoiceRecording()">
+            {{ isRecording() ? '⏹️ Stop' : '🎙️ Record' }}
+          </button>
+          <span *ngIf="isRecording()" class="recording-time" aria-hidden="true">
+            {{ recordingDurationSeconds() }}s
+          </span>
+          <span class="sr-only" aria-live="polite">{{ recordingStatus() }}</span>
+        </div>
+        <input [(ngModel)]="text" name="text" placeholder="Ask the AI..." [disabled]="isLoading() || isRecording()" required>
         <button type="submit" [disabled]="isLoading() || !text">
           {{ isLoading() ? 'Sending...' : 'Send' }}
         </button>

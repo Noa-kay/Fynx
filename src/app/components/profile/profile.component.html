@@ -9,6 +9,7 @@
         <div class="bubble"></div>
     </div>
 
+
     <header class="app-header">
         <div class="logo"><img src="assets/images/Logo.png" alt="Fynx Logo"></div>
         <nav>
@@ -29,7 +30,7 @@
         <div class="avatar-dropdown-wrapper">
             
             <div class="user-avatar-small-container sweezy-custom-cursor-hover" (click)="toggleAvatarMenu()">
-                <img [src]="user().avatarUrl" alt="User" class="user-avatar-small">
+                <img [src]="authService.getFullAvatarUrl() || 'https://placehold.co/50x50/ff9933/ffffff?text=U'" alt="User" class="user-avatar-small">
             </div>
 
             <div class="avatar-dropdown-menu" *ngIf="isAvatarMenuOpen()">
@@ -122,10 +123,15 @@
         <div class="edit-bio-modal-overlay" *ngIf="isEditingProfile()" (click)="cancelEditProfile()">
             <div class="edit-bio-modal" (click)="$event.stopPropagation()">
                 <h3 class="card-title">Edit Profile Details</h3>
-                
+
                 <label class="modal-label">Name</label>
                 <input type="text" [(ngModel)]="editedName" class="bio-edit-textarea" placeholder="Your full name">
                 
+
+                 <div *ngIf="isSubmitted() && !editedName.trim()" class="error-small-text">
+                  Name is required
+              </div>
+
                 <label class="modal-label">Title</label>
                 <input type="text" [(ngModel)]="editedTitle" class="bio-edit-textarea" placeholder="e.g. Senior Frontend Developer">
                 

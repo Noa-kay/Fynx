@@ -1,8 +1,3 @@
-
-
-/* --- Profile Bubbles Row --- */
-
-
 .profile-bubbles-row {
     display: flex;
     justify-content: center;
@@ -593,6 +588,20 @@
     background: linear-gradient(90deg, var(--fynx-orange), var(--fynx-pink));
     color: var(--fynx-white);
 }
+
+.input-error {
+    border: 1px solid #dc2626 !important;
+    background-color: #fffafb;
+}
+
+.error-small-text {
+    color: #dc2626;
+    font-size: 0.8rem;
+    margin-top: -10px;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
 
 /* --- 7. Responsive Design --- */
 @media (max-width: 768px) {

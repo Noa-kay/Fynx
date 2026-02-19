@@ -18,7 +18,7 @@ export class ApiService {
   }
 
    updatePost(id: number, payload: FormData | any): Observable<any> {
-    return this.http.put(`${this.base}/skills/${id}/like`, payload);
+    return this.http.put(`${this.base}/skills/${id}`, payload);
   }
 
   deletePost(id: number): Observable<any> {
