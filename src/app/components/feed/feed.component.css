@@ -509,6 +509,15 @@
   fill: #ff4d94;
 }
 
+.like-btn.active {
+  background: rgba(255, 77, 148, 0.2);
+  color: #ff4d94;
+}
+
+.like-btn.active svg {
+  fill: #ff4d94;
+}
+
 .comment-btn:hover {
   background: rgba(0, 188, 212, 0.2);
   color: #00bcd4;

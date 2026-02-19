@@ -53,50 +53,124 @@
 
   <div class="menu-overlay" *ngIf="isAvatarMenuOpen()" (click)="toggleAvatarMenu()"></div>
 
+  <div class="modal-backdrop" *ngIf="dialogMode()" (click)="closeConversationDialog()"></div>
+  <div class="modal" *ngIf="dialogMode()">
+    <div class="create-form" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <h3 *ngIf="dialogMode() === 'rename'">Rename Chat</h3>
+      <h3 *ngIf="dialogMode() === 'delete'">Delete Chat</h3>
+      <h3 *ngIf="dialogMode() === 'clear'">Clear Chat</h3>
+
+      <p *ngIf="dialogMode() === 'delete'">
+        Are you sure you want to delete this chat?
+      </p>
+
+      <p *ngIf="dialogMode() === 'clear'">
+        Are you sure you want to clear this chat?
+      </p>
+
+      <label *ngIf="dialogMode() === 'rename'" class="field">
+        <span>Chat name</span>
+        <input
+          id="rename-chat-input"
+          type="text"
+          [ngModel]="renameDraft()"
+          (ngModelChange)="renameDraft.set($event)"
+          [ngModelOptions]="{ standalone: true }"
+          maxlength="60"
+          placeholder="Enter chat name">
+      </label>
+
+      <div class="modal-actions">
+        <button type="button" class="btn secondary" (click)="closeConversationDialog()">Cancel</button>
+        <button
+          type="button"
+          class="btn"
+          [class.primary]="dialogMode() === 'rename'"
+          [class.danger]="dialogMode() === 'delete' || dialogMode() === 'clear'"
+          [disabled]="dialogMode() === 'rename' && !renameDraft().trim()"
+          (click)="confirmConversationDialog()">
+          {{ dialogMode() === 'delete' ? 'Delete' : dialogMode() === 'clear' ? 'Clear' : 'Save' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div class="profile-layout-container">
-    <div class="card chat-card">
-      <h3 class="text-xl font-semibold text-center text-white">Fynx AI Chat</h3>
-      
-      <div class="messages">
-        <div *ngFor="let m of messages(); trackBy: trackByFn" [ngClass]="m.role">
-         <div class="message-bubble">
-           <strong *ngIf="m.role === 'ai'">AI:</strong>
-           <span [innerHTML]="formatAiResponse(m.text)"></span>
-  
-           <button *ngIf="m.role === 'ai'" class="tts-btn" type="button" (click)="speak(m.text)" title="Read aloud">🔊</button>
+    <div class="chat-layout">
+      <aside class="card history-sidebar">
+        <div class="sidebar-header">
+          <h4 class="sidebar-title">Chats</h4>
+          <button type="button" class="secondary-btn" (click)="startNewChat()">➕ New Chat</button>
         </div>
+
+        <div class="history-list" role="list">
+          <button
+            *ngFor="let conversation of sortedConversations()"
+            type="button"
+            class="history-item"
+            [class.active]="activeConversationId() === conversation.id"
+            (click)="openConversation(conversation.id)">
+            <span class="history-item-title">{{ conversation.title || 'New chat' }}</span>
+            <span class="history-item-date">{{ conversation.updatedAt | date:'short' }}</span>
+          </button>
         </div>
-        <div *ngIf="isLoading()" class="ai thinking">
-          <div class="message-bubble">
-            <strong>AI:</strong>
-            <span class="animate-pulse">🤔 ... Generating response...</span>
+
+        <div class="history-actions" *ngIf="activeConversationId() as selectedId">
+          <button type="button" class="secondary-btn" (click)="renameConversation(selectedId)">✏️ Rename</button>
+          <button type="button" class="secondary-btn danger-btn" (click)="deleteConversation(selectedId)">🗑️ Delete</button>
+        </div>
+      </aside>
+
+      <div class="card chat-card">
+        <div class="chat-header-row">
+          <h3 class="text-xl font-semibold text-center text-white">Fynx AI Chat</h3>
+          <div class="chat-actions">
+            <button *ngIf="isStreaming()" type="button" class="secondary-btn stop-btn" (click)="stopStreamingResponse()">Stop</button>
+            <button type="button" class="secondary-btn" (click)="clearChat()" [disabled]="!canClearChat() || isStreaming()">Clear Chat</button>
           </div>
         </div>
-        <div #messagesEnd></div>
-      </div>
-      
-      <form (ngSubmit)="send()" class="input-area">
-        <div class="voice-controls">
-          <button
-            type="button"
-            class="record-btn"
-            [class.recording]="isRecording()"
-            [disabled]="isLoading() || !isVoiceRecordingSupported()"
-            [attr.aria-label]="voiceRecordingButtonLabel()"
-            [attr.aria-pressed]="isRecording()"
-            (click)="toggleVoiceRecording()">
-            {{ isRecording() ? '⏹️ Stop' : '🎙️ Record' }}
-          </button>
-          <span *ngIf="isRecording()" class="recording-time" aria-hidden="true">
-            {{ recordingDurationSeconds() }}s
-          </span>
-          <span class="sr-only" aria-live="polite">{{ recordingStatus() }}</span>
+
+        <div class="messages" #messagesContainer>
+          <div *ngFor="let m of messages(); trackBy: trackByFn" [ngClass]="m.role">
+           <div class="message-bubble">
+               <span *ngIf="m.role === 'ai'" class="ai-line-wrap">
+                 <span [innerHTML]="formatAiResponse(m.text)"></span>
+                 <button class="tts-btn" type="button" (click)="speak(m.text)" title="Read aloud">🔊</button>
+               </span>
+               <span *ngIf="m.role !== 'ai'" [innerHTML]="formatAiResponse(m.text)"></span>
+          </div>
+          </div>
+          <div *ngIf="isLoading()" class="ai thinking">
+            <div class="message-bubble">
+              <span class="animate-pulse">🤔 ... Generating response...</span>
+            </div>
+          </div>
+          <div #messagesEnd></div>
         </div>
-        <input [(ngModel)]="text" name="text" placeholder="Ask the AI..." [disabled]="isLoading() || isRecording()" required>
-        <button type="submit" [disabled]="isLoading() || !text">
-          {{ isLoading() ? 'Sending...' : 'Send' }}
-        </button>
-      </form>
+
+        <form (ngSubmit)="send()" class="input-area">
+          <div class="voice-controls">
+            <button
+              type="button"
+              class="record-btn"
+              [class.recording]="isRecording()"
+              [disabled]="isLoading() || !isVoiceRecordingSupported()"
+              [attr.aria-label]="voiceRecordingButtonLabel()"
+              [attr.aria-pressed]="isRecording()"
+              (click)="toggleVoiceRecording()">
+              {{ isRecording() ? '⏹️ Stop' : '🎙️ Record' }}
+            </button>
+            <span *ngIf="isRecording()" class="recording-time" aria-hidden="true">
+              {{ recordingDurationSeconds() }}s
+            </span>
+            <span class="sr-only" aria-live="polite">{{ recordingStatus() }}</span>
+          </div>
+          <input [(ngModel)]="text" name="text" placeholder="Ask the AI..." [disabled]="isLoading() || isRecording()" (keydown)="onMessageInputKeydown($event)" required>
+          <button type="submit" [disabled]="isLoading() || (!text.trim() && !isRecording())">
+            {{ isLoading() ? 'Sending...' : 'Send' }}
+          </button>
+        </form>
+      </div>
 
     </div>
   </div>

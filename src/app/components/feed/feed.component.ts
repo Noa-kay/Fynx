@@ -189,7 +189,50 @@ export class FeedComponent implements OnInit {
         return cat ? cat.name : `Category ${categoryId}`;
     }
 
+    private getLikeStateStorageKey(): string {
+        const currentUser = this.authService.currentUser() as any;
+        const userId = currentUser?.userId ?? currentUser?.id ?? 'guest';
+        return `fynx-like-state-${userId}`;
+    }
+
+    private readLikeStateMap(): Record<number, boolean> {
+        if (typeof localStorage === 'undefined') return {};
+        const raw = localStorage.getItem(this.getLikeStateStorageKey());
+        if (!raw) return {};
+
+        try {
+            return JSON.parse(raw) as Record<number, boolean>;
+        } catch {
+            return {};
+        }
+    }
+
+    private writeLikeState(skillId: number, isLiked: boolean): void {
+        if (typeof localStorage === 'undefined') return;
+        const map = this.readLikeStateMap();
+        map[skillId] = isLiked;
+        localStorage.setItem(this.getLikeStateStorageKey(), JSON.stringify(map));
+    }
+
+    isPostLiked(post: Post): boolean {
+        const localState = this.readLikeStateMap()[post.skillId];
+        if (typeof localState === 'boolean') {
+            return localState;
+        }
+
+        const currentUser = this.authService.currentUser() as any;
+        const userId = currentUser?.userId ?? currentUser?.id;
+        const likedBy = post?.likedBy ?? [];
+
+        if (!userId || !Array.isArray(likedBy)) {
+            return false;
+        }
+
+        return likedBy.map(v => String(v)).includes(String(userId));
+    }
+
    likePost(post: any): void {
+    const previousState = this.isPostLiked(post);
     const currentUser = this.authService.currentUser();
     
     const userId = (currentUser as any)?.userId || (currentUser as any)?.id;
@@ -208,6 +251,8 @@ export class FeedComponent implements OnInit {
                 current[idx] = savedPost; 
                 this.allPosts.set(current); 
             }
+
+            this.writeLikeState(post.skillId, !previousState);
         },
         error: (err) => {
             console.error('Error toggling like:', err);
