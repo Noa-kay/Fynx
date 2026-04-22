@@ -1,0 +1,154 @@
+
+<div class="categories-page-wrapper">
+    <div class="bubble-background">
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+    </div>
+
+        <header class="app-header">
+        <div class="logo"><img src="assets/images/Logo.png" alt="Fynx Logo"></div>
+        <nav>
+            <a routerLink="/feed" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                Home
+            </a>
+            <a routerLink="/categories" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                Categories
+            </a>
+            <a routerLink="/chat" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                AI Chat
+            </a>
+        </nav>
+        
+        <div class="avatar-dropdown-wrapper">
+            
+            <div class="user-avatar-small-container sweezy-custom-cursor-hover" (click)="toggleAvatarMenu()">
+                <img [src]="authService.getFullAvatarUrl()" alt="User" class="user-avatar-small">
+            </div>
+
+            <div class="avatar-dropdown-menu" *ngIf="isAvatarMenuOpen()">
+                
+                <a class="menu-item profile-link-btn" routerLink="/profile" (click)="isAvatarMenuOpen.set(false)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.935 13.935 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Profile
+                </a>
+
+                <div class="menu-divider"></div>
+
+                <button class="menu-item sign-out-btn" (click)="signOut()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H7a3 3 0 01-3-3V7a3 3 0 013-3h3a3 3 0 013 3v1"/></svg>
+                    Sign Out
+                </button>
+            </div>
+        </div>
+        
+    </header>
+
+    <div class="menu-overlay" *ngIf="isAvatarMenuOpen()" (click)="toggleAvatarMenu()"></div>
+
+        <div class="content-wrapper">
+            <div class="posts-container">
+            <div class="feed-toolbar">
+                <div class="search-box">
+                    <input type="text" placeholder="Search posts..." [ngModel]="search()" (ngModelChange)="search.set($event)">
+                </div>
+                <div class="filter-row">
+                    <select [ngModel]="selectedCategoryId()" (ngModelChange)="selectedCategoryId.set($event === 'all' ? 'all' : +$event)">
+                       <option value="all">All categories</option>
+                       <option *ngFor="let c of categories()" [value]="c.categoryId">{{ c.categoryName }}</option>
+                       </select>
+                    <select [ngModel]="sortMode()" (ngModelChange)="sortMode.set($event)">
+                        <option value="top">Top (likes + comments)</option>
+                        <option value="likes">Most liked</option>
+                        <option value="comments">Most commented</option>
+                        <option value="new">Newest</option>
+                    </select>
+                    <button class="create-btn" routerLink="/categories">+ Create Post</button>
+                </div>
+            </div>
+
+            <div *ngIf="error()" class="error-banner">{{ error() }}</div>
+
+            <div class="feed-grid" *ngIf="!isLoading(); else loadingTpl">
+                <div class="post-card" *ngFor="let post of filteredPosts()">
+                    <!-- Author Row -->
+                    <div class="post-author-row">
+                        <img [src]="getSafeMediaUrl(post.userAvatarUrl) || 'https://placehold.co/40x40/8e44ad/ffffff?text=' + ((post.username && post.username.charAt(0)) || 'U')" 
+                             [alt]="post.username" 
+                             class="post-author-avatar">
+                        <span class="post-author-name">{{ post.username || 'Unknown' }}</span>
+                    </div>
+
+                    <!-- Post Header with Title -->
+                    <div class="post-header">
+                        <h3>{{ post.title }}</h3>
+                    </div>
+
+                    <!-- Post Body -->
+                    <div class="post-body">
+                        <p>{{ post.description }}</p> 
+                    </div>
+
+                    <!-- Post Media -->
+                    <div class="post-media" *ngIf="post.imagePath">
+    
+                        <video 
+                        *ngIf="isPostVideo(post)" 
+                        [src]="getSafeMediaUrl(post.imagePath)"  controls playsinline
+                        ></video>
+                        
+                        <audio 
+                        *ngIf="isPostAudio(post)" 
+                        [src]="getSafeMediaUrl(post.imagePath)"  controls
+                        ></audio>
+                        
+                        <img 
+                        *ngIf="!isPostVideo(post) && !isPostAudio(post)" 
+                        [src]="getSafeMediaUrl(post.imagePath)"  alt="Post media" 
+                        />
+                        
+                    </div>
+
+
+                    <!-- Post Footer - Likes & Comments -->
+                    <div class="post-footer">
+                        <button class="interaction-btn like-btn" (click)="likePost(post)" title="Like">
+                            <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                            </svg>
+                            <span>{{ post.likesCount || 0 }}</span>
+                        </button>
+                        <button class="interaction-btn comment-btn" (click)="goToPostCategory(post)" title="Comment">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                            </svg>
+                            <span>{{ post.comments.length || 0 }}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="empty-state" *ngIf="filteredPosts().length === 0 && !error()">
+                    <p>No matching posts</p>
+                    <p class="small">Try changing filters or create the first post!</p>
+                </div>
+            </div>
+
+            <ng-template #loadingTpl>
+                <div class="feed-grid">
+                    <div class="post-card skeleton" *ngFor="let s of [1,2,3,4,5,6]">
+                        <div class="skeleton-line w-60"></div>
+                        <div class="skeleton-line w-100"></div>
+                        <div class="skeleton-line w-80"></div>
+                    </div>
+                </div>
+            </ng-template>
+            </div>
+        </div>
+</div>

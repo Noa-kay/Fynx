@@ -1,0 +1,44 @@
+<div class="app-screen-wrapper">
+  <div class="bubble-background">
+      <div class="bubble" style="--size: 80px; left: 10%; bottom: -100px; --duration: 15s; --delay: 0s;"></div>
+      <div class="bubble" style="--size: 40px; left: 70%; bottom: -50px; --duration: 20s; --delay: 5s;"></div>
+      <div class="bubble" style="--size: 150px; left: 35%; bottom: -150px; --duration: 10s; --delay: 8s;"></div>
+      <div class="bubble" style="--size: 25px; left: 90%; bottom: -30px; --duration: 25s; --delay: 3s;"></div>
+      <div class="bubble" style="--size: 100px; left: 5%; bottom: -120px; --duration: 18s; --delay: 12s;"></div>
+      <div class="bubble" style="--size: 70px; left: 55%; bottom: -90px; --duration: 14s; --delay: 6s;"></div>
+      <div class="bubble" style="--size: 30px; left: 20%; bottom: -40px; --duration: 22s; --delay: 10s;"></div>
+  </div>
+
+  <div class="app-screen">
+      <div class="welcome-card glass-card">
+          <div class="app-logo-mini">
+              <img src="/assets/images/Logo.png" alt="Fynx logo" class="app-logo-image" />
+          </div>
+
+          <h1 class="app-title">Fynx</h1>
+          <h2 class="app-subtitle">Welcome back! Sign in to continue your learning journey</h2>
+
+          <div class="buttons">
+              <button (click)="goToSignIn()" class="btn btn-sign-in">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 1.2em; height: 1.2em;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+                  Sign In
+              </button>
+          </div>
+          
+          <div class="or-separator">
+              <span class="or-text">or</span>
+          </div>
+
+          <div class="buttons">
+              <button (click)="onSignUpSubmit()" class="btn btn-create-account">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 1.2em; height: 1.2em;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-7a4 4 0 11-8 0 4 4 0 018 0zM6 16v1a3 3 0 003 3h10a3 3 0 003-3v-1a7 7 0 00-2-5.48M13 14h-2m-2 0H7m-3 0H2m4 4h7m-7 0H2"/></svg>
+                  Create Account
+              </button>
+          </div>
+          
+          <p class="terms-text">
+              By continuing, you agree to our <a href="javascript:void(0)">Terms of Service</a> and <a href="javascript:void(0)">Privacy Policy</a>
+          </p>
+      </div>
+  </div>
+</div>

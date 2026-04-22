@@ -1,0 +1,144 @@
+<div class="app-screen-wrapper">
+    <div class="bubble-background">
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+    </div>
+
+
+    <header class="app-header">
+        <div class="logo"><img src="assets/images/Logo.png" alt="Fynx Logo"></div>
+        <nav>
+            <a routerLink="/feed" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                Home
+            </a>
+            <a routerLink="/categories" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                Categories
+            </a>
+            <a routerLink="/chat" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                AI Chat
+            </a>
+        </nav>
+        
+        <div class="avatar-dropdown-wrapper">
+            
+            <div class="user-avatar-small-container sweezy-custom-cursor-hover" (click)="toggleAvatarMenu()">
+                <img [src]="authService.getFullAvatarUrl() || 'https://placehold.co/50x50/ff9933/ffffff?text=U'" alt="User" class="user-avatar-small">
+            </div>
+
+            <div class="avatar-dropdown-menu" *ngIf="isAvatarMenuOpen()">
+                
+                <a class="menu-item profile-link-btn" routerLink="/profile" (click)="isAvatarMenuOpen.set(false)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.935 13.935 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Profile
+                </a>
+
+                <div class="menu-divider"></div>
+
+                <button class="menu-item sign-out-btn" (click)="signOut()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H7a3 3 0 01-3-3V7a3 3 0 013-3h3a3 3 0 013 3v1"/></svg>
+                    Sign Out
+                </button>
+            </div>
+        </div>
+        
+    </header>
+
+    <div class="menu-overlay" *ngIf="isAvatarMenuOpen()" (click)="toggleAvatarMenu()"></div>
+
+    <div class="profile-layout-container">
+
+
+    <div class="profile-bubbles-row page-bottom-bubbles">
+            <div class="profile-bubble-style funfact-bubble-style">
+                <div class="bubble-title">Fun Fact</div>
+                <div class="bubble-content">{{ randomFact }}</div>
+            </div>
+            <div class="profile-bubble-style quote-bubble-style">
+                <div class="bubble-title">Motivation</div>
+                <div class="bubble-content">“{{ randomQuote }}”</div>
+            </div>
+        </div>
+
+
+        
+        <div class="profile-card-main card">
+            
+            <div class="profile-info-group">
+                <div class="avatar-container">
+                    <img [src]="user().avatarUrl" alt="User Avatar" class="profile-avatar">
+                    <input type="file" #fileInput (change)="onFileSelected($event)" style="display: none;">
+                    <button class="edit-btn avatar-edit-btn" (click)="fileInput.click()" title="Change Avatar" *ngIf="isOwner()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l1.41-1.84A2 2 0 0111.45 4h1.1a2 2 0 011.664.89l1.41 1.84a2 2 0 001.664.89H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg>
+                    </button>
+                </div>
+                
+                <div class="profile-details">
+                    <h1 class="user-name">{{ user().name }}</h1>
+                    
+                    <p class="user-title">
+                        <span *ngIf="user().title">{{ user().title }}</span>
+                    </p>
+                    
+                    <p class="user-location-text">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4" *ngIf="user().location"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        <span *ngIf="user().location">{{ user().location }}</span>
+                    </p>
+
+                    <p class="user-bio-text">
+                        <span *ngIf="user().bio">{{ user().bio }}</span>
+                        <button class="action-btn icon-only" (click)="toggleEditAbout()" title="Edit Bio" *ngIf="isOwner()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.232 6.232z"/></svg>
+                        </button>
+                    </p>
+                </div>
+            </div>
+            
+            
+           <button class="action-btn edit-profile-lg-btn" (click)="toggleEditProfile()" title="Edit Profile Details" *ngIf="isOwner()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.232 6.232z"/>
+    </svg>
+</button>
+        </div>
+
+        <div class="edit-bio-modal-overlay" *ngIf="isEditingAbout()" (click)="cancelEditAbout()">
+            <div class="edit-bio-modal" (click)="$event.stopPropagation()">
+                <h3 class="card-title">Edit About Section</h3>
+                <textarea [(ngModel)]="editedBio" rows="6" class="bio-edit-textarea" placeholder="Write a short description about yourself..."></textarea>
+                <div class="modal-actions-footer">
+                    <button class="action-btn message-btn" (click)="cancelEditAbout()">Cancel</button>
+                    <button class="action-btn connect-btn submit-button" (click)="saveBio()">Save</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="edit-bio-modal-overlay" *ngIf="isEditingProfile()" (click)="cancelEditProfile()">
+            <div class="edit-bio-modal" (click)="$event.stopPropagation()">
+                <h3 class="card-title">Edit Profile Details</h3>
+                
+                <label class="modal-label">Name</label>
+                <input type="text" [(ngModel)]="editedName" class="bio-edit-textarea" placeholder="Your full name">
+                
+                <label class="modal-label">Title</label>
+                <input type="text" [(ngModel)]="editedTitle" class="bio-edit-textarea" placeholder="e.g. Senior Frontend Developer">
+                
+                <label class="modal-label">Location</label>
+                <input type="text" [(ngModel)]="editedLocation" class="bio-edit-textarea" placeholder="e.g. Tel Aviv, Israel">
+
+                <div class="modal-actions-footer">
+                    <button class="action-btn message-btn" (click)="cancelEditProfile()">Cancel</button>
+                    <button class="action-btn connect-btn submit-button" (click)="saveProfileDetails()">Save</button>
+                </div>
+            </div>
+        </div>
+
+        </div>
+</div>
