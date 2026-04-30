@@ -1,0 +1,132 @@
+<div class="categories-page-wrapper">
+    <div class="bubble-background">
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+    </div>
+
+    <header class="app-header">
+        <div class="logo"><img src="assets/images/Logo.png" alt="Fynx Logo"></div>
+        <nav>
+            <a routerLink="/feed" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                Home
+            </a>
+            <a routerLink="/categories" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                Categories
+            </a>
+            <a routerLink="/chat" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                AI Chat
+            </a>
+        </nav>
+        
+        <div class="avatar-dropdown-wrapper">
+            
+            <div class="user-avatar-small-container sweezy-custom-cursor-hover" (click)="toggleAvatarMenu()">
+                <img [src]="authService.getFullAvatarUrl()" alt="User" class="user-avatar-small">
+            </div>
+
+            <div class="avatar-dropdown-menu" *ngIf="isAvatarMenuOpen()">
+                
+                <a class="menu-item profile-link-btn" routerLink="/profile" (click)="isAvatarMenuOpen.set(false)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.935 13.935 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Profile
+                </a>
+
+                <div class="menu-divider"></div>
+
+                <button class="menu-item sign-out-btn" (click)="signOut()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H7a3 3 0 01-3-3V7a3 3 0 013-3h3a3 3 0 013 3v1"/></svg>
+                    Sign Out
+                </button>
+            </div>
+        </div>
+        
+    </header> <div class="menu-overlay" *ngIf="isAvatarMenuOpen()" (click)="toggleAvatarMenu()"></div>
+
+    <div class="categories-container">
+        <div class="categories-header-row">
+            <div>
+                <h2 class="categories-header">🎯 Explore Categories</h2>
+                <p class="categories-subtitle">Find content and connect with people in these categories.</p>
+            </div>
+            <div>
+                <button class="create-btn" (click)="openCreateModal()">+ Create Category</button>
+            </div>
+        </div>
+
+        <div class="categories-grid">
+            <div class="category-card" *ngFor="let c of categories" (click)="open(c)">
+                <div class="category-card-header">
+                    <h3>{{ c.categoryName }}</h3>
+                    <div class="category-actions">
+                        <button class="action-btn edit-btn" (click)="openEditModal(c, $event)" title="Edit">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        </button>
+                        <button class="action-btn delete-btn" (click)="requestDeleteCategory(c.categoryId, $event)" title="Delete">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <p>{{ c.description || ('Explore ' + c.categoryName + ' content') }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" *ngIf="showCreateModal()" (click)="closeCreateModal()"></div>
+    <div class="modal" *ngIf="showCreateModal()">
+        <form class="create-form" (ngSubmit)="createCategory()" (click)="$event.stopPropagation()">
+            <h3>Create New Category</h3>
+            <label class="field">
+                <span>Title</span>
+                <input name="title" [(ngModel)]="newCategoryTitle" required />
+            </label>
+            <label class="field">
+                <span>Description</span>
+                <textarea name="desc" rows="3" [(ngModel)]="newCategoryDesc"></textarea>
+            </label>
+            <div class="modal-actions">
+                <button type="button" class="btn secondary" (click)="closeCreateModal()">Cancel</button>
+                <button type="submit" class="btn primary" [disabled]="!newCategoryTitle.trim()">Create</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="modal-backdrop" *ngIf="showEditModal()" (click)="closeEditModal()"></div>
+    <div class="modal" *ngIf="showEditModal()">
+        <form class="create-form" (ngSubmit)="saveEditCategory()" (click)="$event.stopPropagation()">
+            <h3>Edit Category</h3>
+            <label class="field">
+                <span>Title</span>
+                <input name="editTitle" [(ngModel)]="editCategoryTitle" required />
+            </label>
+            <label class="field">
+                <span>Description</span>
+                <textarea name="editDesc" rows="3" [(ngModel)]="editCategoryDesc"></textarea>
+            </label>
+            <div class="modal-actions">
+                <button type="button" class="btn secondary" (click)="closeEditModal()">Cancel</button>
+                <button type="submit" class="btn primary" [disabled]="!editCategoryTitle.trim()">Save</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="modal-backdrop" *ngIf="showDeleteModal()" (click)="cancelDeleteCategory()"></div>
+    <div class="modal" *ngIf="showDeleteModal()">
+        <div class="create-form" (click)="$event.stopPropagation()">
+            <h3>Delete Category</h3>
+            <p>Are you sure you want to delete this category? This action cannot be undone.</p>
+            <div class="modal-actions">
+                <button type="button" class="btn secondary" (click)="cancelDeleteCategory()">Cancel</button>
+                <button type="button" class="btn danger" (click)="confirmDeleteCategory()">Delete</button>
+            </div>
+        </div>
+    </div>
+</div> ```
+
